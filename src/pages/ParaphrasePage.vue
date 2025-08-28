@@ -200,8 +200,8 @@
                     :key="index" 
                     class="bg-[#FCBF49]/10 border-l-4 border-[#FCBF49] rounded-r-lg p-3"
                   >
-                    <div v-if="item.issue" class="text-[#FCBF49] font-medium text-sm mb-1">{{ item.issue }}</div>
-                    <div v-if="item.suggestion" class="text-[#EAE2B7]/80 text-xs">{{ item.suggestion }}</div>
+                    <div v-if="typeof item === 'object' && item !== null && 'issue' in item" class="text-[#FCBF49] font-medium text-sm mb-1">{{ (item as any).issue }}</div>
+                    <div v-if="typeof item === 'object' && item !== null && 'suggestion' in item" class="text-[#EAE2B7]/80 text-xs">{{ (item as any).suggestion }}</div>
                     <div v-else-if="typeof item === 'string'" class="text-[#EAE2B7]/80 text-sm">{{ item }}</div>
                   </div>
                 </div>
@@ -387,7 +387,7 @@ const processingStatus = ref('')
 const recordingTime = ref(0)
 const audioBlob = ref<Blob | null>(null)
 const transcribedText = ref('')
-const evaluation = ref<UserParaphraseEvaluation['evaluation_result'] | null>(null) // Type refined to include new evaluation properties
+const evaluation = ref<EvaluationResult | null>(null)
 const showHistory = ref(false)
 const historyRecords = ref<UserParaphraseEvaluation[]>([])
 const aiThinkingSteps = ref<Array<{
@@ -556,7 +556,7 @@ const stopRecording = async () => {
 interface EvaluationResult {
   score: number
   strengths: string[]
-  improvements: string[]
+  improvements: (string | { issue: string; suggestion: string })[]
   overall_feedback: string
   evaluation_type?: 'ai' | 'fallback' | 'low_quality'
   similarity_score?: number
@@ -756,11 +756,7 @@ const processRecording = async () => {
             console.log('📊 [DEBUG] 评估进度:', progress.length, '字符')
           },
           abortController.value.signal
-        ).catch(error => {
-          // 正确处理Promise拒绝
-          console.error('❌ [ERROR] AI评估Promise被拒绝:', error)
-          throw error
-        })
+        )
 
     console.log('✅ [DEBUG] AI评估成功:', result)
 

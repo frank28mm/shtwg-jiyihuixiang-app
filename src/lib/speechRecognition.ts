@@ -67,8 +67,8 @@ class BrowserSpeechRecognition implements SpeechRecognitionService {
     }
 
     try {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-      const recognition = new SpeechRecognition()
+      const SpeechRecognitionClass = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+      const recognition = new SpeechRecognitionClass() as SpeechRecognition
 
       this.recognition = recognition
 
@@ -145,7 +145,7 @@ class BrowserSpeechRecognition implements SpeechRecognitionService {
 
   isAvailable(): boolean {
     return Boolean(
-      window.SpeechRecognition ||
+      (window as any).SpeechRecognition ||
       (window as any).webkitSpeechRecognition
     )
   }
