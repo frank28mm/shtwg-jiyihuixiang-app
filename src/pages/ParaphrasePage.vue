@@ -33,7 +33,7 @@
         </div>
 
         <!-- 桌面端历史记录按钮 -->
-        <div class="hidden md:block absolute top-4 right-4">
+        <div class="hidden md:block absolute top-4 right-4 space-x-2">
           <button
             @click="showHistory = !showHistory"
             class="px-3 py-1 text-sm bg-transparent border border-[#EAE2B7]/30 text-[#EAE2B7]/65 rounded-md hover:bg-[#EAE2B7]/5 transition-colors"
@@ -312,16 +312,29 @@
           'w-full md:w-80'
         ]"
       >
-        <div class="flex items-center justify-between mb-3 md:mb-4 md:block">
+        <div class="flex items-center justify-between mb-3 md:mb-4">
           <h2 class="text-lg font-semibold text-[#EAE2B7]">历史记录</h2>
-          <button 
-            @click="showHistory = false"
-            class="md:hidden p-2 hover:bg-[#EAE2B7]/10 rounded-md transition-colors text-[#EAE2B7]/65"
-          >
-            <ArrowLeft class="w-5 h-5" />
-          </button>
+          <div class="flex items-center space-x-2">
+            <!-- 清除历史按钮 -->
+            <button
+              v-if="historyRecords.length > 0"
+              @click="confirmClearHistory"
+              class="px-2 py-1 text-xs bg-transparent border border-[#D62828]/50 text-[#D62828] rounded-md hover:bg-[#D62828]/10 transition-colors"
+              title="清除所有历史记录"
+            >
+              清除
+            </button>
+            <!-- 移动端关闭按钮 -->
+            <button 
+              @click="showHistory = false"
+              class="md:hidden p-2 hover:bg-[#EAE2B7]/10 rounded-md transition-colors text-[#EAE2B7]/65"
+            >
+              <ArrowLeft class="w-5 h-5" />
+            </button>
+          </div>
         </div>
         <div class="space-y-3">
+          <!-- 历史记录列表 -->
           <div 
             v-for="record in historyRecords" 
             :key="record.id"
@@ -335,6 +348,12 @@
             <p class="text-[#EAE2B7]/80 text-xs md:text-sm line-clamp-2">
               {{ record.paraphrased_text.substring(0, 50) }}...
             </p>
+          </div>
+
+          <!-- 空状态提示 -->
+          <div v-if="historyRecords.length === 0" class="text-center py-8">
+            <div class="text-[#EAE2B7]/50 text-sm">暂无历史记录</div>
+            <div class="text-[#EAE2B7]/30 text-xs mt-1">完成复述训练后会显示在这里</div>
           </div>
         </div>
       </aside>
@@ -820,6 +839,43 @@ const loadHistoryRecord = (record: UserParaphraseEvaluation) => {
   transcribedText.value = record.paraphrased_text
   recordedText.value = record.paraphrased_text // Ensure recordedText is also updated
   evaluation.value = record.evaluation_result
+}
+
+// 确认清除历史记录
+const confirmClearHistory = () => {
+  if (confirm('确定要清除所有历史记录吗？此操作无法撤销。')) {
+    clearHistory()
+  }
+}
+
+// 清除历史记录
+const clearHistory = async () => {
+  if (!authStore.user || !paragraph.value) return
+
+  try {
+    const { error } = await supabase
+      .from('user_paraphrase_evaluations')
+      .delete()
+      .eq('user_id', authStore.user.id)
+      .eq('paragraph_id', paragraph.value.id)
+
+    if (error) {
+      console.error('清除历史记录错误:', error)
+      throw error
+    }
+
+    // 清空本地历史记录
+    historyRecords.value = []
+    
+    console.log('历史记录已清除')
+    
+    // 可选：显示成功提示
+    // alert('历史记录已清除')
+    
+  } catch (error) {
+    console.error('清除历史记录失败:', error)
+    alert(`清除历史记录失败: ${error.message || '未知错误'}`)
+  }
 }
 
 const loadParagraph = async () => {
