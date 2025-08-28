@@ -1,81 +1,96 @@
 <template>
-  <div class="min-h-screen bg-[#003049] flex flex-col">
+  <div class="min-h-screen bg-[#003049] flex flex-col safe-area-top safe-area-bottom">
     <!-- 顶部导航栏 -->
-    <header class="border-b border-[#EAE2B7]/20 p-4">
-      <div class="max-w-4xl mx-auto flex items-center justify-between">
-        <div class="flex items-center space-x-4">
-          <button
-            @click="goBack"
-            class="text-[#EAE2B7]/65 hover:text-[#F77F00] transition-colors"
-          >
-            <ArrowLeft class="w-5 h-5" />
-          </button>
-          <div>
-            <h1 class="text-xl font-bold text-[#EAE2B7] flex items-center">
-              <Mic class="w-5 h-5 mr-2 text-[#F77F00]" />
-              复述训练
-            </h1>
-            <p class="text-[#EAE2B7]/65 text-sm">{{ paragraph?.title }}</p>
+    <header class="border-b border-[#EAE2B7]/20 p-3 md:p-4">
+      <div class="max-w-4xl mx-auto">
+        <div class="flex items-center justify-between mb-2 md:mb-0">
+          <div class="flex items-center space-x-3 md:space-x-4">
+            <button
+              @click="goBack"
+              class="p-2 hover:bg-[#EAE2B7]/10 rounded-md transition-colors text-[#EAE2B7]/65 hover:text-[#F77F00]"
+            >
+              <ArrowLeft class="w-5 h-5" />
+            </button>
+            <div>
+              <h1 class="text-lg md:text-xl font-bold text-[#EAE2B7] flex items-center">
+                <Mic class="w-4 h-4 md:w-5 md:h-5 mr-2 text-[#F77F00]" />
+                复述训练
+              </h1>
+              <p class="text-[#EAE2B7]/65 text-xs md:text-sm hidden md:block">{{ paragraph?.title }}</p>
+            </div>
           </div>
         </div>
 
-        <!-- 历史记录按钮 -->
-        <button
-          @click="showHistory = !showHistory"
-          class="px-3 py-1 text-sm bg-transparent border border-[#EAE2B7]/30 text-[#EAE2B7]/65 rounded-md hover:bg-[#EAE2B7]/5 transition-colors"
-        >
-          {{ showHistory ? '隐藏历史' : '查看历史' }}
-        </button>
+        <!-- 移动端标题和历史记录按钮 -->
+        <div class="md:hidden flex items-center justify-between">
+          <p class="text-[#EAE2B7]/65 text-xs truncate flex-1 mr-3">{{ paragraph?.title }}</p>
+          <button
+            @click="showHistory = !showHistory"
+            class="px-2 py-1 text-xs bg-transparent border border-[#EAE2B7]/30 text-[#EAE2B7]/65 rounded-md hover:bg-[#EAE2B7]/5 transition-colors whitespace-nowrap"
+          >
+            {{ showHistory ? '隐藏' : '历史' }}
+          </button>
+        </div>
+
+        <!-- 桌面端历史记录按钮 -->
+        <div class="hidden md:block absolute top-4 right-4">
+          <button
+            @click="showHistory = !showHistory"
+            class="px-3 py-1 text-sm bg-transparent border border-[#EAE2B7]/30 text-[#EAE2B7]/65 rounded-md hover:bg-[#EAE2B7]/5 transition-colors"
+          >
+            {{ showHistory ? '隐藏历史' : '查看历史' }}
+          </button>
+        </div>
       </div>
     </header>
 
     <div class="flex-1 flex">
       <!-- 主内容区 -->
-      <main class="flex-1 p-8">
+      <main class="flex-1 p-4 md:p-8">
         <div class="max-w-4xl mx-auto">
           <!-- 原文展示 -->
-          <div class="mb-8">
-            <h2 class="text-lg font-semibold text-[#EAE2B7] mb-4">原文内容</h2>
-            <div class="bg-[#EAE2B7]/5 border border-[#EAE2B7]/20 rounded-lg p-6">
-              <div class="text-[#EAE2B7] leading-relaxed whitespace-pre-wrap">
+          <div class="mb-6 md:mb-8">
+            <h2 class="text-lg font-semibold text-[#EAE2B7] mb-3 md:mb-4">原文内容</h2>
+            <div class="bg-[#EAE2B7]/5 border border-[#EAE2B7]/20 rounded-lg p-4 md:p-6">
+              <div class="text-[#EAE2B7] leading-relaxed whitespace-pre-wrap text-sm md:text-base">
                 {{ paragraph?.content }}
               </div>
             </div>
           </div>
 
           <!-- 录音区域 -->
-          <div class="mb-8">
-            <h2 class="text-lg font-semibold text-[#EAE2B7] mb-4">语音复述</h2>
-            <div class="bg-[#003049] border border-[#EAE2B7]/20 rounded-lg p-8 text-center">
+          <div class="mb-6 md:mb-8">
+            <h2 class="text-lg font-semibold text-[#EAE2B7] mb-3 md:mb-4">语音复述</h2>
+            <div class="bg-[#003049] border border-[#EAE2B7]/20 rounded-lg p-4 md:p-8 text-center">
               <!-- 录音状态显示 -->
-              <div class="mb-6">
+              <div class="mb-4 md:mb-6">
                 <div 
                   :class="[
-                    'w-24 h-24 rounded-full mx-auto mb-4 flex items-center justify-center transition-all duration-300',
+                    'w-16 h-16 md:w-24 md:h-24 rounded-full mx-auto mb-3 md:mb-4 flex items-center justify-center transition-all duration-300',
                     isRecording 
                       ? 'bg-[#D62828]/20 border-2 border-[#D62828] animate-pulse' 
                       : 'bg-[#F77F00]/10 border-2 border-[#F77F00] hover:bg-[#F77F00]/20'
                   ]"
                 >
-                  <Mic :class="['w-8 h-8', isRecording ? 'text-[#D62828]' : 'text-[#F77F00]']" />
+                  <Mic :class="['w-6 h-6 md:w-8 md:h-8', isRecording ? 'text-[#D62828]' : 'text-[#F77F00]']" />
                 </div>
 
-                <div class="text-[#EAE2B7] mb-2">
+                <div class="text-[#EAE2B7] mb-2 text-sm md:text-base">
                   {{ isRecording ? '正在录音...' : '点击开始录音' }}
                 </div>
 
-                <div v-if="recordingTime > 0" class="text-[#EAE2B7]/65 text-sm">
+                <div v-if="recordingTime > 0" class="text-[#EAE2B7]/65 text-xs md:text-sm">
                   录音时长: {{ formatTime(recordingTime) }}
                 </div>
               </div>
 
               <!-- 录音控制按钮 -->
-              <div class="flex items-center justify-center space-x-4">
+              <div class="flex flex-col sm:flex-row items-center justify-center space-y-3 sm:space-y-0 sm:space-x-4">
                 <button
                   v-if="!isRecording"
                   @click="startRecording"
                   :disabled="isProcessing"
-                  class="px-6 py-3 bg-[#F77F00] text-[#003049] rounded-lg hover:bg-[#F77F00]/90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                  class="w-full sm:w-auto px-4 md:px-6 py-3 md:py-3 bg-[#F77F00] text-[#003049] rounded-lg hover:bg-[#F77F00]/90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 text-sm md:text-base min-h-[44px]"
                 >
                   <Mic class="w-4 h-4" />
                   <span>开始录音</span>
@@ -84,7 +99,7 @@
                 <button
                   v-else
                   @click="stopRecording"
-                  class="px-6 py-3 bg-[#D62828] text-white rounded-lg hover:bg-[#D62828]/90 transition-colors font-medium flex items-center space-x-2"
+                  class="w-full sm:w-auto px-4 md:px-6 py-3 md:py-3 bg-[#D62828] text-white rounded-lg hover:bg-[#D62828]/90 transition-colors font-medium flex items-center justify-center space-x-2 text-sm md:text-base min-h-[44px]"
                 >
                   <Square class="w-4 h-4" />
                   <span>停止录音</span>
@@ -94,7 +109,7 @@
                   v-if="audioBlob && !isRecording"
                   @click="playRecording"
                   :disabled="isPlaying"
-                  class="px-4 py-3 bg-transparent border border-[#F77F00] text-[#F77F00] rounded-lg hover:bg-[#F77F00]/10 transition-colors disabled:opacity-50"
+                  class="w-full sm:w-auto px-4 py-3 bg-transparent border border-[#F77F00] text-[#F77F00] rounded-lg hover:bg-[#F77F00]/10 transition-colors disabled:opacity-50 flex items-center justify-center min-h-[44px]"
                 >
                   <Play v-if="!isPlaying" class="w-4 h-4" />
                   <Pause v-else class="w-4 h-4" />
@@ -104,18 +119,18 @@
           </div>
 
           <!-- 转录文本 -->
-          <div v-if="transcribedText" class="mb-8">
-            <h2 class="text-lg font-semibold text-[#EAE2B7] mb-4">语音转录</h2>
-            <div class="bg-[#EAE2B7]/5 border border-[#EAE2B7]/20 rounded-lg p-6">
-              <div class="text-[#EAE2B7] leading-relaxed whitespace-pre-wrap">
+          <div v-if="transcribedText" class="mb-6 md:mb-8">
+            <h2 class="text-lg font-semibold text-[#EAE2B7] mb-3 md:mb-4">语音转录</h2>
+            <div class="bg-[#EAE2B7]/5 border border-[#EAE2B7]/20 rounded-lg p-4 md:p-6">
+              <div class="text-[#EAE2B7] leading-relaxed whitespace-pre-wrap text-sm md:text-base">
                 {{ transcribedText }}
               </div>
             </div>
           </div>
 
           <!-- AI评估结果 -->
-          <div v-if="evaluation" class="mb-8">
-            <h2 class="text-lg font-semibold text-[#EAE2B7] mb-4">AI评估报告</h2>
+          <div v-if="evaluation" class="mb-6 md:mb-8">
+            <h2 class="text-lg font-semibold text-[#EAE2B7] mb-3 md:mb-4">AI评估报告</h2>
             <div class="bg-[#003049] border border-[#EAE2B7]/20 rounded-lg p-6">
               <!-- 综合评分 -->
               <div class="flex items-center justify-between mb-6">
@@ -287,8 +302,25 @@
       </main>
 
       <!-- 历史记录侧边栏 -->
-      <aside v-if="showHistory" class="w-80 border-l border-[#EAE2B7]/20 p-4 overflow-y-auto">
-        <h2 class="text-lg font-semibold text-[#EAE2B7] mb-4">历史记录</h2>
+      <aside 
+        v-if="showHistory" 
+        :class="[
+          'border-l border-[#EAE2B7]/20 p-3 md:p-4 overflow-y-auto',
+          'md:w-80',
+          'fixed md:relative inset-0 md:inset-auto z-50 md:z-auto',
+          'bg-[#003049] md:bg-transparent',
+          'w-full md:w-80'
+        ]"
+      >
+        <div class="flex items-center justify-between mb-3 md:mb-4 md:block">
+          <h2 class="text-lg font-semibold text-[#EAE2B7]">历史记录</h2>
+          <button 
+            @click="showHistory = false"
+            class="md:hidden p-2 hover:bg-[#EAE2B7]/10 rounded-md transition-colors text-[#EAE2B7]/65"
+          >
+            <ArrowLeft class="w-5 h-5" />
+          </button>
+        </div>
         <div class="space-y-3">
           <div 
             v-for="record in historyRecords" 
@@ -297,10 +329,10 @@
             @click="loadHistoryRecord(record)"
           >
             <div class="flex items-center justify-between mb-2">
-              <span class="text-[#F77F00] font-medium">{{ record.score }}分</span>
+              <span class="text-[#F77F00] font-medium text-sm md:text-base">{{ record.score }}分</span>
               <span class="text-[#EAE2B7]/50 text-xs">{{ formatDate(record.created_at) }}</span>
             </div>
-            <p class="text-[#EAE2B7]/80 text-sm line-clamp-2">
+            <p class="text-[#EAE2B7]/80 text-xs md:text-sm line-clamp-2">
               {{ record.paraphrased_text.substring(0, 50) }}...
             </p>
           </div>
@@ -320,6 +352,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { siliconFlowAPI } from '@/lib/siliconflow'
 import { speechRecognizer, checkSpeechRecognitionCompatibility } from '@/lib/speechRecognition'
+import { preventDoubleClickZoom, addSafeAreaSupport, isMobileDevice } from '@/utils/touch'
 import type { Paragraph, UserParaphraseEvaluation } from '@/lib/supabase'
 
 const route = useRoute()
@@ -837,6 +870,16 @@ onMounted(async () => {
     await loadHistoryRecords()
   }
   checkSpeechRecognitionSupport()
+  
+  // 移动端优化
+  if (isMobileDevice()) {
+    addSafeAreaSupport()
+    // 防止双击缩放
+    const mainElement = document.querySelector('main')
+    if (mainElement) {
+      preventDoubleClickZoom(mainElement)
+    }
+  }
 })
 
 onUnmounted(() => {
