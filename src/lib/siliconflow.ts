@@ -64,7 +64,7 @@ class SiliconFlowAPI {
           max_tokens: 2000,
           stream: isStreaming
         }),
-        signal: options?.signal
+        signal
       })
 
       console.log('📡 [DEBUG] API响应状态:', response.status, response.statusText)
