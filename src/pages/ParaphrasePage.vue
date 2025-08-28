@@ -412,8 +412,14 @@ const evaluationProgress = ref('')
 const abortController = ref<AbortController | null>(null) // For cancelling requests
 
 // 方法
-const goBack = () => {
-  router.push('/study')
+const goBack = async () => {
+  try {
+    await router.push('/study')
+  } catch (error) {
+    console.error('路由跳转失败:', error)
+    // 强制跳转
+    window.location.href = '/study'
+  }
 }
 
 const formatTime = (seconds: number) => {
@@ -937,57 +943,73 @@ const loadHistoryRecords = async () => {
   }
 }
 
+// 全局错误处理函数
+let handleUnhandledRejection: ((event: PromiseRejectionEvent) => void) | null = null
+
 // 组件挂载
 onMounted(async () => {
-  await loadParagraph()
-  if (authStore.user) { // Load history only if user is logged in
-    await loadHistoryRecords()
-  }
-  checkSpeechRecognitionSupport()
-
-  // 移动端优化
-  if (isMobileDevice()) {
-    addSafeAreaSupport()
-    // 防止双击缩放
-    const mainElement = document.querySelector('main')
-    if (mainElement) {
-      preventDoubleClickZoom(mainElement)
+  try {
+    await loadParagraph()
+    if (authStore.user) { // Load history only if user is logged in
+      await loadHistoryRecords()
     }
-  }
+    checkSpeechRecognitionSupport()
 
-  // 添加全局未处理Promise拒绝的监听
-  const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-    console.error('🚨 [ERROR] 未处理的Promise拒绝:', event.reason)
-    event.preventDefault() // 防止错误传播到控制台
-  }
+    // 移动端优化
+    if (isMobileDevice()) {
+      addSafeAreaSupport()
+      // 防止双击缩放
+      const mainElement = document.querySelector('main')
+      if (mainElement) {
+        preventDoubleClickZoom(mainElement)
+      }
+    }
 
-  window.addEventListener('unhandledrejection', handleUnhandledRejection)
+    // 添加全局未处理Promise拒绝的监听
+    handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.error('🚨 [ERROR] 未处理的Promise拒绝:', event.reason)
+      event.preventDefault() // 防止错误传播到控制台
+    }
+
+    window.addEventListener('unhandledrejection', handleUnhandledRejection)
+  } catch (error) {
+    console.error('组件初始化失败:', error)
+  }
 })
 
 // 组件销毁时的清理
 onUnmounted(() => {
-  // 移除全局监听器
-  window.removeEventListener('unhandledrejection', handleUnhandledRejection)
-
-  // 取消任何进行中的请求
-  if (abortController.value) {
-    abortController.value.abort()
-  }
-
-  // 停止语音识别
-  if (isRecording.value) {
-    speechRecognizer.stopRecognition().catch(err => console.error("Error stopping recognizer on unmount:", err))
-  }
-  // 清理录音计时器
-  if (recordingInterval) {
-    clearInterval(recordingInterval)
-  }
-  // 停止音频播放
-  if (audioElement) {
-    audioElement.pause()
-    if (audioElement.src) {
-      URL.revokeObjectURL(audioElement.src)
+  try {
+    // 移除全局监听器
+    if (handleUnhandledRejection) {
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection)
+      handleUnhandledRejection = null
     }
+
+    // 取消任何进行中的请求
+    if (abortController.value) {
+      abortController.value.abort()
+    }
+
+    // 停止语音识别
+    if (isRecording.value) {
+      speechRecognizer.stopRecognition().catch(err => console.error("Error stopping recognizer on unmount:", err))
+    }
+    // 清理录音计时器
+    if (recordingInterval) {
+      clearInterval(recordingInterval)
+      recordingInterval = null
+    }
+    // 停止音频播放
+    if (audioElement) {
+      audioElement.pause()
+      if (audioElement.src) {
+        URL.revokeObjectURL(audioElement.src)
+      }
+      audioElement = null
+    }
+  } catch (error) {
+    console.error('组件清理失败:', error)
   }
 })
 
