@@ -180,6 +180,10 @@ ${currentContent}
     onProgress?: (content: string) => void,
     signal?: AbortSignal
   ): Promise<string> {
+    // 检查取消信号
+    if (signal?.aborted) {
+      throw new Error('操作已被取消')
+    }
     const prompt = `请作为专业的天文馆讲解员评估员，对以下复述内容进行专业评估。
 
 原文内容：
@@ -281,7 +285,19 @@ ${paraphrasedContent}
       { role: 'user', content: prompt }
     ]
 
-    return await this.chat(messages, { onProgress, signal })
+    try {
+      return await this.chat(messages, { onProgress, signal })
+    } catch (error) {
+      // 如果是取消错误，重新抛出
+      if (signal?.aborted || error.name === 'AbortError') {
+        const abortError = new Error('评估已被取消')
+        abortError.name = 'AbortError'
+        throw abortError
+      }
+      
+      // 其他错误正常处理
+      throw error
+    }
   }
 }
 

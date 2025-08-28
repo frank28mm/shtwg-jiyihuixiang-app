@@ -343,7 +343,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { 
   ArrowLeft, Mic, Square, Play, Pause, CheckCircle, AlertTriangle, Loader2, BookOpen
@@ -368,21 +368,7 @@ const processingStatus = ref('')
 const recordingTime = ref(0)
 const audioBlob = ref<Blob | null>(null)
 const transcribedText = ref('')
-const evaluation = ref<{
-  score: number
-  strengths: string[]
-  improvements: string[]
-  overall_feedback: string
-  accuracy_score?: number
-  completeness_score?: number
-  clarity_score?: number
-  presentation_score?: number
-  key_terms?: string[]
-  presentation_tips?: string[]
-  evaluation_type?: 'ai' | 'fallback' | 'low_quality'
-  similarity_score?: number
-  quality_issues?: string[]
-} | null>(null) // Type refined to include new evaluation properties
+const evaluation = ref<UserParaphraseEvaluation['evaluation_result'] | null>(null) // Type refined to include new evaluation properties
 const showHistory = ref(false)
 const historyRecords = ref<UserParaphraseEvaluation[]>([])
 const aiThinkingSteps = ref<Array<{
@@ -401,6 +387,10 @@ let audioElement: HTMLAudioElement | null = null
 const isSpeechRecognitionSupported = ref(false)
 const recognitionStatus = ref('')
 const usingIFlytek = ref(false) // Not used in the current logic, but kept for potential future use.
+const recordedText = ref('') // Renamed from transcribedText for clarity within processRecording
+const isEvaluating = ref(false)
+const evaluationProgress = ref('')
+const abortController = ref<AbortController | null>(null) // For cancelling requests
 
 // 方法
 const goBack = () => {
@@ -480,7 +470,8 @@ const startRecording = async () => {
     await speechRecognizer.startRecognition(
       (text) => {
         console.log('语音识别结果:', text)
-        transcribedText.value = text
+        transcribedText.value = text // Update the displayed transcribed text
+        recordedText.value = text // Also update the internal variable used by processRecording
         // AI评估在停止录音时触发，这里只更新转录文本
       },
       (error) => {
@@ -545,6 +536,13 @@ interface EvaluationResult {
   evaluation_type?: 'ai' | 'fallback' | 'low_quality'
   similarity_score?: number
   quality_issues?: string[]
+  error_message?: string // For fallback scenarios
+  accuracy_score?: number
+  completeness_score?: number
+  clarity_score?: number
+  presentation_score?: number
+  key_terms?: string[]
+  presentation_tips?: string[]
 }
 
 interface QualityCheckResult {
@@ -583,14 +581,13 @@ const analyzeTranscriptionQuality = (text: string, originalContent: string): Qua
   return { isValid: true, reason: 'valid', score: null }
 }
 
-// 计算文本相似度
-const calculateTextSimilarity = (text1: string, text2: string): number => {
+// 计算文本相似度 (Jaccard 相似度)
+const calculateSimilarity = (text1: string, text2: string): number => {
   const clean1 = text1.replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '').toLowerCase()
   const clean2 = text2.replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '').toLowerCase()
 
   if (clean1.length === 0 || clean2.length === 0) return 0
 
-  // 使用Jaccard相似度
   const set1 = new Set(clean1)
   const set2 = new Set(clean2)
   const intersection = new Set([...set1].filter(x => set2.has(x)))
@@ -600,39 +597,44 @@ const calculateTextSimilarity = (text1: string, text2: string): number => {
 }
 
 // 生成低质量内容的评估结果
-const generateLowQualityEvaluation = (reason: string, score: number): EvaluationResult => {
-  const reasonMessages: Record<string, { strengths: string[], improvements: string[], feedback: string }> = {
+const generateFallbackEvaluation = (qualityCheck: QualityCheckResult): EvaluationResult => {
+  const reasonMessages: Record<string, { strengths: string[], improvements: string[], feedback: string, score: number }> = {
     empty: {
       strengths: [],
       improvements: ['请确保录音设备工作正常', '尝试重新录制您的复述'],
-      feedback: '未检测到有效的语音内容，请重新录制。'
+      feedback: '未检测到有效的语音内容，请重新录制。',
+      score: 0
     },
     too_short: {
       strengths: [],
       improvements: ['请完整地复述整个段落内容', '建议先仔细阅读原文'],
-      feedback: '复述内容过于简短，请尝试更完整地表达。'
+      feedback: '复述内容过于简短，请尝试更完整地表达。',
+      score: 20
     },
     repeated_content: {
       strengths: [],
       improvements: ['请避免重复的口语表达', '建议重新组织语言'],
-      feedback: '检测到重复内容，请重新录制。'
+      feedback: '检测到重复内容，请重新录制。',
+      score: 25
     },
     too_short_compared: {
       strengths: ['已尝试进行复述'],
       improvements: ['需要包含更多原文中的关键信息', '建议重新阅读并理解原文'],
-      feedback: '复述内容相对原文过短，请尝试更完整地表达。'
+      feedback: '复述内容相对原文过短，请尝试更完整地表达。',
+      score: 30
     }
   }
 
-  const messages = reasonMessages[reason] || reasonMessages.empty
+  const messages = reasonMessages[qualityCheck.reason] || reasonMessages.empty
 
   return {
-    score,
+    score: messages.score,
     strengths: messages.strengths,
     improvements: messages.improvements,
     overall_feedback: messages.feedback,
     evaluation_type: 'low_quality',
-    quality_issues: [reason]
+    quality_issues: [qualityCheck.reason],
+    error_message: `质量检测失败: ${qualityCheck.reason}`
   }
 }
 
@@ -682,96 +684,111 @@ const generateIntelligentEvaluation = (transcribedText: string, originalContent:
   return evaluation
 }
 
-// 改进的备用评估机制
-const getFallbackEvaluation = (transcribedText: string, originalContent: string): EvaluationResult => {
-  console.log('🔄 [DEBUG] 使用备用评估机制')
-
-  // 先进行质量检查
-  const qualityCheck = analyzeTranscriptionQuality(transcribedText, originalContent)
-  if (!qualityCheck.isValid) {
-    return generateLowQualityEvaluation(qualityCheck.reason, qualityCheck.score || 0)
-  }
-
-  // 计算文本相似度
-  const similarity = calculateTextSimilarity(transcribedText, originalContent)
-  console.log('📊 [DEBUG] 文本相似度:', similarity)
-
-  // 生成智能评估
-  return generateIntelligentEvaluation(transcribedText, originalContent, similarity)
-}
-
 // 处理录音结果
 const processRecording = async () => {
-  if (!transcribedText.value || !paragraph.value) {
-    console.warn('缺少必要数据，无法处理录音')
+  console.log('🚀 [DEBUG] 开始处理录音结果...')
+
+  if (!recordedText.value?.trim()) {
+    console.warn('⚠️ [WARNING] 录音文本为空')
     return
   }
 
-  isProcessing.value = true
-  error.value = null
+  console.log('📝 [DEBUG] 转录文本:', recordedText.value)
+  console.log('📖 [DEBUG] 原文内容:', paragraph.value?.content)
+
+  // 内容质量检测
+  const qualityCheck = analyzeTranscriptionQuality(recordedText.value, paragraph.value?.content || '')
+
+  if (!qualityCheck.isValid) {
+    // 使用预设的评估结果
+    const fallbackEvaluation = generateFallbackEvaluation(qualityCheck)
+    evaluation.value = fallbackEvaluation
+    console.log('⚠️ [DEBUG] 使用备用评估结果:', fallbackEvaluation)
+    return
+  }
 
   try {
-    console.log('🚀 [DEBUG] 开始处理录音结果...')
-    console.log('📝 [DEBUG] 转录文本:', transcribedText.value)
-    console.log('📖 [DEBUG] 原文内容:', paragraph.value.content)
+    console.log('🤖 [DEBUG] 尝试调用AI评估...')
 
-    let evaluation: EvaluationResult
+    // 清空之前的评估结果
+    evaluation.value = null
+    isEvaluating.value = true
+    evaluationProgress.value = ''
 
+    // 创建新的AbortController
+    if (abortController.value) {
+      abortController.value.abort()
+    }
+    abortController.value = new AbortController()
+
+    // 使用流式AI评估
+    const result = await siliconFlowAPI.evaluateParaphrase(
+      paragraph.value?.content || '',
+      recordedText.value,
+      (progress) => {
+        // 流式更新评估进度
+        evaluationProgress.value = progress
+        console.log('📊 [DEBUG] 评估进度:', progress.length, '字符')
+      },
+      abortController.value.signal
+    ).catch(error => {
+      // 正确处理Promise拒绝
+      console.error('❌ [ERROR] AI评估Promise被拒绝:', error)
+      throw error
+    })
+
+    console.log('✅ [DEBUG] AI评估成功:', result)
+
+    // 解析AI返回的JSON结果
+    let parsedEvaluation
     try {
-      // 尝试调用AI API进行评估
-      console.log('🤖 [DEBUG] 尝试调用AI评估...')
-
-      // 模拟AI API调用，返回一个JSON字符串
-      // 实际应用中，这里会是网络请求
-      const aiResponseJson = await new Promise<string>((resolve, reject) => {
-        // 模拟网络延迟和成功/失败
-        setTimeout(() => {
-          if (Math.random() > 0.3) { // 70% 成功率
-            const dummyEvaluation = {
-              score: Math.floor(Math.random() * 20) + 75, // 75-95
-              strengths: ['发音清晰', '逻辑连贯'],
-              improvements: ['内容细节需更丰富', '可适当增加停顿'],
-              overall_feedback: '总体复述质量高，表达流畅。',
-              evaluation_type: 'ai',
-              similarity_score: 0.75, // 示例值
-              accuracy_score: 85,
-              completeness_score: 80,
-              clarity_score: 90,
-              presentation_score: 70
-            }
-            resolve(JSON.stringify(dummyEvaluation))
-          } else {
-            reject(new Error('AI服务暂时不可用'))
-          }
-        }, 1000) // 模拟1秒延迟
-      })
-
-      // 解析AI评估结果
-      const parsedEvaluation = JSON.parse(aiResponseJson)
-      evaluation = parsedEvaluation as EvaluationResult
-      console.log('✅ [DEBUG] AI评估成功:', evaluation)
-
-    } catch (aiError) {
-      console.warn('⚠️ [DEBUG] AI评估失败，使用备用评估:', aiError)
-      // 使用改进的备用评估机制
-      evaluation = getFallbackEvaluation(transcribedText.value, paragraph.value.content)
-      console.log('✅ [DEBUG] 备用评估结果:', evaluation)
+      // 尝试从结果中提取JSON
+      const jsonMatch = result.match(/\{[\s\S]*\}/)
+      if (jsonMatch) {
+        parsedEvaluation = JSON.parse(jsonMatch[0])
+      } else {
+        throw new Error('无法从AI响应中提取JSON')
+      }
+    } catch (parseError) {
+      console.warn('⚠️ [WARNING] 解析AI评估结果失败:', parseError)
+      // 使用智能备用评估
+      parsedEvaluation = generateIntelligentEvaluation(recordedText.value, paragraph.value?.content || '', 0.75)
     }
 
-    // 保存评估结果
-    evaluationResult.value = evaluation
-    evaluation.value = evaluation // Update the component's evaluation ref
-    currentStep.value = 'result'
+    // 补充评估元数据
+    evaluation.value = {
+      ...parsedEvaluation,
+      evaluation_type: 'ai',
+      similarity_score: calculateSimilarity(recordedText.value, paragraph.value?.content || ''),
+      timestamp: new Date().toISOString()
+    }
 
-  } catch (err) {
-    console.error('❌ [DEBUG] 处理录音时出错:', err)
-    error.value = '处理录音时出现错误，请重试'
+  } catch (error) {
+    // 检查是否是用户取消操作
+    if (error.name === 'AbortError') {
+      console.log('🛑 [DEBUG] 用户取消了AI评估')
+      return
+    }
+
+    console.error('❌ [ERROR] AI评估失败:', error)
+
+    // 使用智能备用评估
+    const fallbackEvaluation = generateIntelligentEvaluation(
+      recordedText.value, 
+      paragraph.value?.content || '', 
+      calculateSimilarity(recordedText.value, paragraph.value?.content || '')
+    )
+
+    evaluation.value = {
+      ...fallbackEvaluation,
+      evaluation_type: 'fallback',
+      error_message: error.message || '评估服务暂时不可用'
+    }
+
+    console.log('🔄 [DEBUG] 使用智能备用评估:', evaluation.value)
   } finally {
-    isProcessing.value = false
-    // 清空思考步骤
-    setTimeout(() => {
-      aiThinkingSteps.value = []
-    }, 2000)
+    isEvaluating.value = false
+    evaluationProgress.value = ''
   }
 }
 
@@ -801,6 +818,7 @@ const saveEvaluation = async (paraphrasedText: string, evaluationResult: Evaluat
 
 const loadHistoryRecord = (record: UserParaphraseEvaluation) => {
   transcribedText.value = record.paraphrased_text
+  recordedText.value = record.paraphrased_text // Ensure recordedText is also updated
   evaluation.value = record.evaluation_result
 }
 
@@ -863,14 +881,14 @@ const loadHistoryRecords = async () => {
   }
 }
 
-// 组件挂载和卸载
+// 组件挂载
 onMounted(async () => {
   await loadParagraph()
   if (authStore.user) { // Load history only if user is logged in
     await loadHistoryRecords()
   }
   checkSpeechRecognitionSupport()
-  
+
   // 移动端优化
   if (isMobileDevice()) {
     addSafeAreaSupport()
@@ -880,22 +898,74 @@ onMounted(async () => {
       preventDoubleClickZoom(mainElement)
     }
   }
+
+  // 添加全局未处理Promise拒绝的监听
+  const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+    console.error('🚨 [ERROR] 未处理的Promise拒绝:', event.reason)
+    event.preventDefault() // 防止错误传播到控制台
+  }
+
+  window.addEventListener('unhandledrejection', handleUnhandledRejection)
 })
 
+// 组件销毁时的清理
 onUnmounted(() => {
-  // Ensure cleanup happens even if the component is unmounted during recording
-  if (isRecording.value) {
-    stopRecording() // This will also call speechRecognizer.stopRecognition()
+  // 移除全局监听器
+  window.removeEventListener('unhandledrejection', handleUnhandledRejection)
+
+  // 取消任何进行中的请求
+  if (abortController.value) {
+    abortController.value.abort()
   }
+
+  // 停止语音识别
+  if (isRecording.value) {
+    speechRecognizer.stopRecognition().catch(err => console.error("Error stopping recognizer on unmount:", err))
+  }
+  // 清理录音计时器
   if (recordingInterval) {
     clearInterval(recordingInterval)
   }
+  // 停止音频播放
   if (audioElement) {
     audioElement.pause()
-    // Clean up the object URL if it was created
     if (audioElement.src) {
       URL.revokeObjectURL(audioElement.src)
     }
   }
 })
+
+// 播放录音
+const playRecording = async () => {
+  if (!audioBlob.value) return
+
+  if (isPlaying.value) {
+    if (audioElement) {
+      audioElement.pause()
+      isPlaying.value = false
+    }
+    return
+  }
+
+  try {
+    isPlaying.value = true
+    if (!audioElement) {
+      audioElement = new Audio()
+    }
+    const url = URL.createObjectURL(audioBlob.value)
+    audioElement.src = url
+    audioElement.play()
+
+    audioElement.onended = () => {
+      isPlaying.value = false
+      // Clean up the object URL after playback
+      URL.revokeObjectURL(url)
+    }
+  } catch (err) {
+    console.error('播放录音失败:', err)
+    isPlaying.value = false
+    alert('播放录音失败')
+  }
+}
+
 </script>
