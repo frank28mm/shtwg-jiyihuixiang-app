@@ -200,8 +200,8 @@
                     :key="index" 
                     class="bg-[#FCBF49]/10 border-l-4 border-[#FCBF49] rounded-r-lg p-3"
                   >
-                    <div v-if="typeof item === 'object' && item !== null && 'issue' in item" class="text-[#FCBF49] font-medium text-sm mb-1">{{ (item as any).issue }}</div>
-                    <div v-if="typeof item === 'object' && item !== null && 'suggestion' in item" class="text-[#EAE2B7]/80 text-xs">{{ (item as any).suggestion }}</div>
+                    <div v-if="typeof item === 'object' && item !== null && 'issue' in item" class="text-[#FCBF49] font-medium text-sm mb-1">{{ item.issue }}</div>
+                    <div v-if="typeof item === 'object' && item !== null && 'suggestion' in item" class="text-[#EAE2B7]/80 text-xs">{{ item.suggestion }}</div>
                     <div v-else-if="typeof item === 'string'" class="text-[#EAE2B7]/80 text-sm">{{ item }}</div>
                   </div>
                 </div>
@@ -561,7 +561,7 @@ interface EvaluationResult {
   evaluation_type?: 'ai' | 'fallback' | 'low_quality'
   similarity_score?: number
   quality_issues?: string[]
-  error_message?: string // For fallback scenarios
+  error_message?: string
   accuracy_score?: number
   completeness_score?: number
   clarity_score?: number
@@ -658,8 +658,7 @@ const generateFallbackEvaluation = (qualityCheck: QualityCheckResult): Evaluatio
     improvements: messages.improvements,
     overall_feedback: messages.feedback,
     evaluation_type: 'low_quality',
-    quality_issues: [qualityCheck.reason],
-    error_message: `质量检测失败: ${qualityCheck.reason}`
+    quality_issues: [qualityCheck.reason]
   }
 }
 
@@ -802,8 +801,7 @@ const processRecording = async () => {
 
     evaluation.value = {
       ...fallbackEvaluation,
-      evaluation_type: 'fallback',
-      error_message: error.message || '评估服务暂时不可用'
+      evaluation_type: 'fallback'
     }
 
     console.log('🔄 [DEBUG] 使用智能备用评估:', evaluation.value)
@@ -1035,7 +1033,7 @@ onUnmounted(() => {
 
     // 停止语音识别
     if (isRecording.value) {
-      speechRecognizer.stopRecognition().catch(err => console.error("Error stopping recognizer on unmount:", err))
+      speechRecognizer.stopRecognition()
     }
     // 清理录音计时器
     if (recordingInterval) {

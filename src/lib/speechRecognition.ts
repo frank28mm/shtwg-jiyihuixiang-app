@@ -1,8 +1,8 @@
 // 完整的TypeScript类型声明
 declare global {
   interface Window {
-    SpeechRecognition: typeof SpeechRecognition
-    webkitSpeechRecognition: typeof SpeechRecognition
+    SpeechRecognition: new() => SpeechRecognition
+    webkitSpeechRecognition: new() => SpeechRecognition
   }
 }
 

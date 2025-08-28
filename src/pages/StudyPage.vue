@@ -29,15 +29,15 @@
             </div>
           </div>
           <div class="flex items-center space-x-1">
-            <button 
-              @click="goToWelcome" 
+            <button
+              @click="goToWelcome"
               class="p-2 hover:bg-[#EAE2B7]/10 rounded-md transition-colors"
               title="返回欢迎页"
             >
               <Home class="w-4 h-4 text-[#EAE2B7]/65" />
             </button>
-            <button 
-              @click="handleSignOut" 
+            <button
+              @click="handleSignOut"
               class="p-2 hover:bg-[#EAE2B7]/10 rounded-md transition-colors"
               title="退出登录"
             >
@@ -56,13 +56,13 @@
               <h3 class="text-[#EAE2B7] font-medium text-sm uppercase tracking-wide">
                 {{ section.name }}
               </h3>
-              <ChevronDown 
-                :class="['w-4 h-4 text-[#EAE2B7]/65 transition-transform', 
+              <ChevronDown
+                :class="['w-4 h-4 text-[#EAE2B7]/65 transition-transform',
                          section.expanded ? 'rotate-180' : '']"
                 @click="toggleSection(section)"
               />
             </div>
-            
+
             <!-- 模块和段落列表 -->
             <div v-show="section.expanded" class="space-y-1 ml-2">
               <div v-for="module in section.modules" :key="module.name" class="mb-3">
@@ -71,13 +71,13 @@
                   <h4 class="text-[#EAE2B7]/80 font-medium text-xs uppercase tracking-wide px-2">
                     {{ module.name }}
                   </h4>
-                  <ChevronDown 
-                    :class="['w-3 h-3 text-[#EAE2B7]/50 transition-transform cursor-pointer', 
+                  <ChevronDown
+                    :class="['w-3 h-3 text-[#EAE2B7]/50 transition-transform cursor-pointer',
                              module.expanded ? 'rotate-180' : '']"
                     @click="toggleModule(module)"
                   />
                 </div>
-                
+
                 <!-- 段落列表 -->
                 <div v-show="module.expanded" class="space-y-1 ml-3">
                   <button
@@ -96,7 +96,7 @@
                     <!-- 进度指示器 -->
                     <div class="mt-1 flex items-center space-x-1">
                       <div class="flex-1 h-1 bg-[#EAE2B7]/20 rounded-full overflow-hidden">
-                        <div 
+                        <div
                           class="h-full bg-[#F77F00] transition-all duration-300"
                           :style="{ width: `${getProgress(paragraph.id)}%` }"
                         ></div>
@@ -113,8 +113,8 @@
     </div>
 
     <!-- 移动端遮罩层 -->
-    <div 
-      v-if="showMobileMenu" 
+    <div
+      v-if="showMobileMenu"
       @click="showMobileMenu = false"
       class="md:hidden fixed inset-0 bg-black/50 z-30"
     ></div>
@@ -144,7 +144,7 @@
 
 
         </div>
-        
+
         <!-- 空状态 -->
         <div v-else class="flex items-center justify-center h-full">
           <div class="text-center">
@@ -166,13 +166,13 @@
               <MessageCircle class="w-4 h-4 md:w-5 md:h-5" />
               天文馆AI讲解员
             </button>
-            
+
             <!-- 开始填空训练按钮 -->
             <button
               @click="startFillBlankTraining"
               class="w-full md:w-auto px-4 md:px-6 py-3 bg-gradient-to-r from-[#F77F00] to-[#FCBF49] text-[#001D3D] rounded-md font-semibold hover:from-[#FCBF49] hover:to-[#F77F00] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center gap-2 text-sm md:text-base"
             >开始填空训练</button>
-            
+
             <!-- 复述训练功能 -->
             <button
               @click="startParaphraseTraining"
@@ -191,7 +191,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { 
+import {
   User, LogOut, ChevronDown, BookOpen, MessageCircle, Menu, X, Home, Mic
 } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
@@ -281,10 +281,10 @@ const initMobileOptimizations = () => {
   if (isMobileDevice()) {
     // 添加安全区域支持
     addSafeAreaSupport()
-    
+
     // 防止双击缩放
     preventDoubleClickZoom(document.body)
-    
+
     // 添加触摸手势支持
     touchHandler = new TouchGestureHandler(document.body, {
       threshold: 80,
@@ -306,7 +306,7 @@ const initMobileOptimizations = () => {
 const loadParagraphs = async () => {
   try {
     console.log('开始加载段落数据...')
-    
+
     // 优先从Supabase加载数据
     const { data: supabaseData, error: supabaseError } = await supabase
       .from('paragraphs')
@@ -316,19 +316,19 @@ const loadParagraphs = async () => {
 
     if (supabaseData && supabaseData.length > 0 && !supabaseError) {
       console.log(`从Supabase加载了${supabaseData.length}个段落`)
-      
+
       // 按展区和模块分组
       const groupedData = supabaseData.reduce((acc: Record<string, Record<string, any[]>>, paragraph: any) => {
         const section = paragraph.section || '默认展区'
         const module = '默认模块' // Supabase数据可能没有module字段
-        
+
         if (!acc[section]) {
           acc[section] = {}
         }
         if (!acc[section][module]) {
           acc[section][module] = []
         }
-        
+
         acc[section][module].push({
           id: paragraph.custom_id || paragraph.id,
           title: paragraph.title,
@@ -357,17 +357,17 @@ const loadParagraphs = async () => {
       if (sections.value.length > 0 && sections.value[0].modules.length > 0 && sections.value[0].modules[0].paragraphs.length > 0) {
         selectedParagraph.value = sections.value[0].modules[0].paragraphs[0]
       }
-      
+
       console.log('从Supabase成功加载数据')
       return
     }
-    
+
     console.log('Supabase数据为空，尝试加载本地文件...')
-    
+
     // 备用方案：从本地JSON文件加载数据
     let paragraphsData = []
     let markdownContent = ''
-    
+
     try {
       const response = await fetch('/shanghai_astronomy_museum.json')
       if (!response.ok) {
@@ -377,18 +377,19 @@ const loadParagraphs = async () => {
       console.log(`从JSON文件加载了${paragraphsData.length}个段落`)
     } catch (jsonError) {
       console.warn('加载JSON文件失败:', jsonError)
-      // 使用默认数据
+      // 提供最基本的默认数据
       paragraphsData = [{
-        id: 'default-1',
-        title: '默认段落',
-        content: '这是一个默认段落，用于演示功能。',
-        section: '默认展区',
-        module: '默认模块',
+        id: 'fallback-1',
+        title: '加载中...',
+        content: '正在从数据库获取内容，请稍候。',
+        section: '...',
+        order_index: 1,
         fill_blanks: [],
-        potential_qa: []
+        potential_qa: [],
+        created_at: new Date().toISOString()
       }]
     }
-    
+
     try {
       const markdownResponse = await fetch('/讲解逐字稿.md')
       if (markdownResponse.ok) {
@@ -398,25 +399,25 @@ const loadParagraphs = async () => {
     } catch (markdownError) {
       console.warn('加载Markdown文件失败:', markdownError)
     }
-    
+
     // 解析Markdown内容，创建段落映射
     const markdownSections = markdownContent ? parseMarkdownContent(markdownContent) : {}
-    
+
     // 按展区和模块分组并合并原文内容
     const groupedData = paragraphsData.reduce((acc: Record<string, Record<string, any[]>>, paragraph: any) => {
       const section = paragraph.section || '默认展区'
       const module = paragraph.module || '默认模块'
-      
+
       if (!acc[section]) {
         acc[section] = {}
       }
       if (!acc[section][module]) {
         acc[section][module] = []
       }
-      
+
       // 查找对应的原文内容
       const originalContent = findOriginalContent(markdownSections, paragraph.section, paragraph.title)
-      
+
       acc[section][module].push({
         ...paragraph,
         content: originalContent || paragraph.content // 优先使用原文，否则使用JSON中的内容
@@ -439,9 +440,9 @@ const loadParagraphs = async () => {
     if (sections.value.length > 0 && sections.value[0].modules.length > 0 && sections.value[0].modules[0].paragraphs.length > 0) {
       selectedParagraph.value = sections.value[0].modules[0].paragraphs[0]
     }
-    
+
     console.log('数据加载完成')
-    
+
   } catch (error) {
     console.error('加载段落数据失败:', error)
     // 提供最基本的默认数据
@@ -453,16 +454,17 @@ const loadParagraphs = async () => {
         expanded: true,
         paragraphs: [{
           id: 'fallback-1',
-          title: '示例段落',
-          content: '这是一个示例段落，用于确保应用正常运行。请检查数据源配置。',
-          section: '默认展区',
+          title: '加载中...',
+          content: '正在从数据库获取内容，请稍候。',
+          section: '...',
           order_index: 1,
           fill_blanks: [],
-          potential_qa: []
+          potential_qa: [],
+          created_at: new Date().toISOString()
         }]
       }]
     }]
-    
+
     if (sections.value[0].modules[0].paragraphs[0]) {
       selectedParagraph.value = sections.value[0].modules[0].paragraphs[0]
     }
@@ -500,7 +502,7 @@ const parseMarkdownContent = (content: string) => {
   let currentSection = ''
   let currentSubtitle = ''
   let currentContent = ''
-  
+
   for (const line of lines) {
     if (line.trim() === '') {
       if (currentContent.trim()) {
@@ -508,7 +510,7 @@ const parseMarkdownContent = (content: string) => {
       }
       continue
     }
-    
+
     // 检查是否是主标题（展区）
     if (line.match(/^[^#\s].*展区$/) || line === '上海天文馆简介') {
       // 保存之前的内容
@@ -516,7 +518,7 @@ const parseMarkdownContent = (content: string) => {
         if (!sections[currentSection]) sections[currentSection] = {}
         sections[currentSection][currentSubtitle] = currentContent.trim()
       }
-      
+
       currentSection = line.trim()
       currentSubtitle = ''
       currentContent = ''
@@ -528,7 +530,7 @@ const parseMarkdownContent = (content: string) => {
         if (!sections[currentSection]) sections[currentSection] = {}
         sections[currentSection][currentSubtitle] = currentContent.trim()
       }
-      
+
       currentSubtitle = line.trim()
       currentContent = ''
     }
@@ -537,32 +539,32 @@ const parseMarkdownContent = (content: string) => {
       currentContent += line + '\n'
     }
   }
-  
+
   // 保存最后一段内容
   if (currentSection && currentSubtitle && currentContent.trim()) {
     if (!sections[currentSection]) sections[currentSection] = {}
     sections[currentSection][currentSubtitle] = currentContent.trim()
   }
-  
+
   return sections
 }
 
 // 查找原文内容
 const findOriginalContent = (markdownSections: Record<string, Record<string, string>>, section: string, title: string) => {
   if (!markdownSections[section]) return null
-  
+
   // 尝试直接匹配标题
   if (markdownSections[section][title]) {
     return markdownSections[section][title]
   }
-  
+
   // 尝试模糊匹配
   for (const [key, content] of Object.entries(markdownSections[section])) {
     if (key.includes(title) || title.includes(key)) {
       return content
     }
   }
-  
+
   return null
 }
 
