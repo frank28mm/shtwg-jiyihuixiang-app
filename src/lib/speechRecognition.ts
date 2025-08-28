@@ -1,3 +1,51 @@
+// 完整的TypeScript类型声明
+declare global {
+  interface Window {
+    SpeechRecognition: typeof SpeechRecognition
+    webkitSpeechRecognition: typeof SpeechRecognition
+  }
+}
+
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean
+  interimResults: boolean
+  lang: string
+  maxAlternatives: number
+  start(): void
+  stop(): void
+  onresult: ((event: SpeechRecognitionEvent) => void) | null
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null
+  onend: (() => void) | null
+}
+
+interface SpeechRecognitionEvent extends Event {
+  results: SpeechRecognitionResultList
+  resultIndex: number
+}
+
+interface SpeechRecognitionResultList {
+  length: number
+  item(index: number): SpeechRecognitionResult
+  [index: number]: SpeechRecognitionResult
+}
+
+interface SpeechRecognitionResult {
+  length: number
+  item(index: number): SpeechRecognitionAlternative
+  [index: number]: SpeechRecognitionAlternative
+  isFinal: boolean
+}
+
+interface SpeechRecognitionAlternative {
+  transcript: string
+  confidence: number
+}
+
+interface SpeechRecognitionErrorEvent extends Event {
+  error: string
+  message: string
+}
+
 // 语音识别服务抽象类
 export interface SpeechRecognitionService {
   startRecognition(onResult: (text: string) => void, onError: (error: string) => void): Promise<void>
@@ -21,7 +69,7 @@ class BrowserSpeechRecognition implements SpeechRecognitionService {
     try {
       const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition
       this.recognition = new SpeechRecognition()
-      
+
       this.recognition.continuous = true
       this.recognition.interimResults = true
       this.recognition.lang = 'zh-CN'
@@ -49,7 +97,7 @@ class BrowserSpeechRecognition implements SpeechRecognitionService {
       this.recognition.onerror = (event) => {
         console.error('语音识别错误:', event.error)
         let errorMessage = '语音识别失败'
-        
+
         switch (event.error) {
           case 'no-speech':
             errorMessage = '未检测到语音'
@@ -67,7 +115,7 @@ class BrowserSpeechRecognition implements SpeechRecognitionService {
             errorMessage = '语音识别被取消'
             break
         }
-        
+
         onError(errorMessage)
       }
 
@@ -128,7 +176,7 @@ class IFlytekSpeechRecognition implements SpeechRecognitionService {
       })
 
       this.audioChunks = []
-      
+
       // 创建MediaRecorder
       const mimeType = MediaRecorder.isTypeSupported('audio/webm')
         ? 'audio/webm'
@@ -167,7 +215,7 @@ class IFlytekSpeechRecognition implements SpeechRecognitionService {
     } catch (error) {
       console.error('启动科大讯飞识别失败:', error)
       let errorMessage = '语音识别失败'
-      
+
       if (error.name === 'NotAllowedError') {
         errorMessage = '麦克风权限被拒绝'
       } else if (error.name === 'NotFoundError') {
@@ -175,7 +223,7 @@ class IFlytekSpeechRecognition implements SpeechRecognitionService {
       } else {
         errorMessage = error.message || '无法访问麦克风'
       }
-      
+
       onError(errorMessage)
     }
   }
@@ -199,7 +247,7 @@ class IFlytekSpeechRecognition implements SpeechRecognitionService {
   private async recognizeWithIFlytek(audioBlob: Blob): Promise<string> {
     // 这里应该调用后端API进行科大讯飞语音识别
     // 由于浏览器安全限制，实际应用中应该通过后端服务调用科大讯飞API
-    
+
     // 模拟科大讯飞识别结果
     return new Promise((resolve) => {
       setTimeout(() => {
@@ -210,7 +258,7 @@ class IFlytekSpeechRecognition implements SpeechRecognitionService {
           '天文馆的外观设计灵感来源于天体的运动轨迹，三个主要展区分别是家园、宇宙和征程。',
           '这里展示了丰富的天文展品和互动体验，让游客能够深入了解宇宙的奥秘。'
         ]
-        
+
         const randomResult = mockResults[Math.floor(Math.random() * mockResults.length)]
         resolve(randomResult)
       }, 1000 + Math.random() * 1000)
@@ -237,15 +285,15 @@ class SpeechRecognitionFactory {
 
   static getAvailableServices(): string[] {
     const services: string[] = []
-    
+
     if (new BrowserSpeechRecognition().isAvailable()) {
       services.push('browser')
     }
-    
+
     if (new IFlytekSpeechRecognition().isAvailable()) {
       services.push('iflytek')
     }
-    
+
     return services
   }
 }
@@ -261,13 +309,13 @@ export const checkAvailableServices = () => {
 // 获取当前使用的语音识别服务类型
 export const getCurrentRecognizerType = (): string => {
   const recognizer = speechRecognizer
-  
+
   if (recognizer instanceof BrowserSpeechRecognition) {
     return 'browser'
   } else if (recognizer instanceof IFlytekSpeechRecognition) {
     return 'iflytek'
   }
-  
+
   return 'unknown'
 }
 
@@ -280,7 +328,7 @@ export const checkSpeechRecognitionCompatibility = (): {
 } => {
   const availableServices = checkAvailableServices()
   const currentService = getCurrentRecognizerType()
-  
+
   return {
     supported: availableServices.length > 0,
     availableServices,

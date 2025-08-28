@@ -18,7 +18,7 @@
             <p class="text-[#EAE2B7]/65 text-sm">{{ paragraph?.title }}</p>
           </div>
         </div>
-        
+
         <!-- 历史记录按钮 -->
         <button
           @click="showHistory = !showHistory"
@@ -59,11 +59,11 @@
                 >
                   <Mic :class="['w-8 h-8', isRecording ? 'text-[#D62828]' : 'text-[#F77F00]']" />
                 </div>
-                
+
                 <div class="text-[#EAE2B7] mb-2">
                   {{ isRecording ? '正在录音...' : '点击开始录音' }}
                 </div>
-                
+
                 <div v-if="recordingTime > 0" class="text-[#EAE2B7]/65 text-sm">
                   录音时长: {{ formatTime(recordingTime) }}
                 </div>
@@ -80,7 +80,7 @@
                   <Mic class="w-4 h-4" />
                   <span>开始录音</span>
                 </button>
-                
+
                 <button
                   v-else
                   @click="stopRecording"
@@ -89,7 +89,7 @@
                   <Square class="w-4 h-4" />
                   <span>停止录音</span>
                 </button>
-                
+
                 <button
                   v-if="audioBlob && !isRecording"
                   @click="playRecording"
@@ -258,7 +258,7 @@
           <div v-if="isProcessing" class="text-center py-8">
             <Loader2 class="w-8 h-8 text-[#F77F00] animate-spin mx-auto mb-4" />
             <div class="text-[#EAE2B7]/65 mb-4">{{ processingStatus }}</div>
-            
+
             <!-- AI思考过程显示 -->
             <div v-if="aiThinkingSteps.length > 0" class="max-w-2xl mx-auto">
               <div class="bg-[#EAE2B7]/5 border border-[#EAE2B7]/20 rounded-lg p-4 text-left">
@@ -340,6 +340,12 @@ const evaluation = ref<{
   strengths: string[]
   improvements: string[]
   overall_feedback: string
+  accuracy_score?: number
+  completeness_score?: number
+  clarity_score?: number
+  presentation_score?: number
+  key_terms?: string[]
+  presentation_tips?: string[]
 } | null>(null)
 const showHistory = ref(false)
 const historyRecords = ref<UserParaphraseEvaluation[]>([])
@@ -355,7 +361,7 @@ let recordingInterval: number | null = null
 let audioElement: HTMLAudioElement | null = null
 const isSpeechRecognitionSupported = ref(false)
 const recognitionStatus = ref('')
-const usingIFlytek = ref(false)
+const usingIFlytek = ref(false) // Not used in the current logic, but kept for potential future use.
 
 // 方法
 const goBack = () => {
@@ -389,7 +395,7 @@ const checkSpeechRecognitionSupport = () => {
   const compatibility = checkSpeechRecognitionCompatibility()
   isSpeechRecognitionSupported.value = compatibility.supported
   usingIFlytek.value = compatibility.currentService === 'iflytek'
-  
+
   if (!compatibility.supported) {
     recognitionStatus.value = compatibility.reason || '语音识别不可用'
   } else {
@@ -403,12 +409,12 @@ const startRecording = async () => {
   try {
     // 检查语音识别支持
     checkSpeechRecognitionSupport()
-    
+
     if (!isSpeechRecognitionSupported.value) {
       alert(recognitionStatus.value)
       return
     }
-    
+
     // 清理之前的录音状态
     if (audioBlob.value) {
       audioBlob.value = null
@@ -419,98 +425,84 @@ const startRecording = async () => {
     if (evaluation.value) {
       evaluation.value = null
     }
-    
+
     isRecording.value = true
     recordingTime.value = 0
-    
+
     // 开始计时
     recordingInterval = window.setInterval(() => {
       recordingTime.value++
     }, 1000)
-    
+
     console.log('开始语音识别...', recognitionStatus.value)
-    
+
     // 使用新的语音识别服务
     await speechRecognizer.startRecognition(
       (text) => {
         console.log('语音识别结果:', text)
         transcribedText.value = text
-        processWithTranscribedText(text)
+        // AI评估在停止录音时触发，这里只更新转录文本
       },
       (error) => {
         console.error('语音识别错误:', error)
         alert(`语音识别失败: ${error}`)
-        stopRecording()
+        stopRecording() // 停止录音并清理
       }
     )
-    
+
   } catch (error) {
     console.error('启动语音识别失败:', error)
     alert(`启动失败: ${error.message || '未知错误'}`)
-    stopRecording()
+    stopRecording() // 停止录音并清理
   }
 }
 
-const stopRecording = () => {
+const stopRecording = async () => {
   try {
     // 停止语音识别
-    speechRecognizer.stopRecognition()
-    
+    await speechRecognizer.stopRecognition()
+
     isRecording.value = false
-    
+
     if (recordingInterval) {
       clearInterval(recordingInterval)
       recordingInterval = null
     }
-    
-    // 停止旧的MediaRecorder
-    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-      mediaRecorder.stop()
-      if (mediaRecorder.stream) {
-        mediaRecorder.stream.getTracks().forEach(track => track.stop())
-      }
-    }
-    
+
     console.log('语音识别已停止')
-    
+
+    // 如果有转录文本，开始AI评估
+    if (transcribedText.value && transcribedText.value.trim().length > 0) {
+      await processRecording()
+    } else {
+      // 如果没有转录文本，可能需要清理状态或提示用户
+      // 例如： 如果录音时间很短，可能没有有效的转录
+      if (recordingTime.value < 1) {
+        alert('录音时间太短，未能获取有效语音。')
+      }
+      // 重置录音状态，允许用户重新开始
+      recordingTime.value = 0
+      audioBlob.value = null
+    }
+
   } catch (error) {
     console.error('停止语音识别失败:', error)
+    // 确保即使停止失败，也清理相关状态
+    isRecording.value = false
+    if (recordingInterval) {
+      clearInterval(recordingInterval)
+      recordingInterval = null
+    }
   }
 }
 
 // 使用转录文本进行处理
-const processWithTranscribedText = async (text: string) => {
-  if (!text || !paragraph.value) return
-  
-  // 停止录音状态
-  stopRecording()
-  
-  // 直接开始AI评估
-  await processRecording()
-}
-
-const playRecording = () => {
-  if (!audioBlob.value) return
-  
-  if (audioElement) {
-    audioElement.pause()
-    audioElement = null
-  }
-  
-  audioElement = new Audio(URL.createObjectURL(audioBlob.value))
-  audioElement.onplay = () => { isPlaying.value = true }
-  audioElement.onpause = () => { isPlaying.value = false }
-  audioElement.onended = () => { isPlaying.value = false }
-  
-  audioElement.play()
-}
-
 const processRecording = async () => {
   if (!transcribedText.value || !paragraph.value) return
-  
+
   isProcessing.value = true
   processingStatus.value = '正在进行AI评估...'
-  
+
   // 初始化AI思考步骤
   aiThinkingSteps.value = [
     { text: '语音内容分析完成', status: 'completed' },
@@ -518,9 +510,8 @@ const processRecording = async () => {
     { text: '正在生成改进建议...', status: 'pending' },
     { text: '正在总结评估结果...', status: 'pending' }
   ]
-  
+
   try {
-    
     // 使用流式AI评估
     let aiResponse = ''
     await siliconFlowAPI.evaluateParaphrase(
@@ -528,46 +519,62 @@ const processRecording = async () => {
       transcribedText.value,
       (partialContent) => {
         aiResponse = partialContent
-        
+
         // 根据响应长度更新思考步骤状态
         if (aiResponse.length > 50) {
           aiThinkingSteps.value[1] = { text: '复述准确性评估完成', status: 'completed' }
           aiThinkingSteps.value[2] = { text: '正在生成改进建议...', status: 'processing' }
         }
-        
+
         if (aiResponse.length > 200) {
           aiThinkingSteps.value[2] = { text: '改进建议生成完成', status: 'completed' }
           aiThinkingSteps.value[3] = { text: '正在总结评估结果...', status: 'processing' }
         }
       }
     )
-    
+
     // 解析AI评估结果
     try {
       const evaluationData = JSON.parse(aiResponse)
-      evaluation.value = evaluationData
-      
+      // 确保所有必需字段都存在，否则使用默认值
+      evaluation.value = {
+        score: evaluationData.score ?? 0,
+        strengths: evaluationData.strengths ?? [],
+        improvements: evaluationData.improvements ?? [],
+        overall_feedback: evaluationData.overall_feedback ?? '暂无总体反馈',
+        accuracy_score: evaluationData.accuracy_score,
+        completeness_score: evaluationData.completeness_score,
+        clarity_score: evaluationData.clarity_score,
+        presentation_score: evaluationData.presentation_score,
+        key_terms: evaluationData.key_terms,
+        presentation_tips: evaluationData.presentation_tips
+      }
+
       // 更新最后一步为完成状态
       aiThinkingSteps.value[3] = { text: '评估结果总结完成', status: 'completed' }
-      
+
       // 保存评估结果
-      await saveEvaluation(transcribedText.value, evaluationData)
-      
+      await saveEvaluation(transcribedText.value, evaluation.value)
+
     } catch (parseError) {
       console.error('解析AI评估结果失败:', parseError)
-      
+
       // 如果解析失败，使用备用评估
       const fallbackEvaluation = {
         score: Math.floor(Math.random() * 30) + 70,
         strengths: ['复述基本准确', '表达流畅'],
         improvements: ['建议增加细节描述', '可以加入更多专业术语'],
-        overall_feedback: '整体表现良好，建议继续加强练习。'
+        overall_feedback: '整体表现良好，建议继续加强练习。',
+        accuracy_score: 75,
+        completeness_score: 70,
+        clarity_score: 80,
+        presentation_score: 70
       }
-      
+
       evaluation.value = fallbackEvaluation
       await saveEvaluation(transcribedText.value, fallbackEvaluation)
     }
-    
+
   } catch (error) {
     console.error('处理录音失败:', error)
     alert('处理录音失败，请稍后重试')
@@ -583,23 +590,23 @@ const processRecording = async () => {
 
 const saveEvaluation = async (paraphrasedText: string, evaluationResult: any) => {
   if (!authStore.user || !paragraph.value) return
-  
+
   try {
     const { error } = await supabase
       .from('user_paraphrase_evaluations')
       .insert({
         user_id: authStore.user.id,
-        paragraph_id: paragraph.value.id,
+        paragraph_id: paragraph.value.id, // Assuming paragraph.value.id is the UUID
         paraphrased_text: paraphrasedText,
         evaluation_result: evaluationResult,
         score: evaluationResult.score
       })
-    
+
     if (error) throw error
-    
+
     // 刷新历史记录
     await loadHistoryRecords()
-    
+
   } catch (error) {
     console.error('保存评估结果失败:', error)
   }
@@ -614,78 +621,84 @@ const loadParagraph = async () => {
   const paragraphId = route.params.id as string
   if (!paragraphId) {
     console.error('缺少段落ID参数')
-    router.push('/')
+    router.push('/study') // Navigate back if no ID
     return
   }
-  
+
   try {
     const { data, error } = await supabase
       .from('paragraphs')
       .select('*')
-      .eq('custom_id', paragraphId)
+      .eq('custom_id', paragraphId) // Assuming custom_id is the identifier used in route
       .single()
-    
+
     if (error) {
       console.error('数据库查询错误:', error)
       throw error
     }
-    
+
     if (!data) {
       console.error('未找到段落:', paragraphId)
       throw new Error('段落不存在')
     }
-    
+
     paragraph.value = data
     console.log('段落加载成功:', data.title)
   } catch (error) {
     console.error('加载段落失败:', error)
-    // 不要立即跳转，给用户提示
     alert(`加载段落失败: ${error.message || '未知错误'}\n段落ID: ${paragraphId}`)
-    router.push('/')
+    router.push('/study') // Navigate back on failure
   }
 }
 
 const loadHistoryRecords = async () => {
   if (!authStore.user || !paragraph.value) return
-  
+
   try {
     const { data, error } = await supabase
       .from('user_paraphrase_evaluations')
       .select('*')
       .eq('user_id', authStore.user.id)
-      .eq('paragraph_id', paragraph.value.id) // 使用UUID主键
+      .eq('paragraph_id', paragraph.value.id) // Use the actual UUID primary key
       .order('created_at', { ascending: false })
       .limit(10)
-    
+
     if (error) {
       console.error('历史记录查询错误:', error)
       throw error
     }
-    
+
     historyRecords.value = data || []
     console.log(`加载了 ${data?.length || 0} 条历史记录`)
   } catch (error) {
     console.error('加载历史记录失败:', error)
-    // 历史记录加载失败不影响主要功能，只记录错误
+    // History loading failure is not critical, so just log it.
   }
 }
 
 // 组件挂载和卸载
 onMounted(async () => {
   await loadParagraph()
-  await loadHistoryRecords()
+  if (authStore.user) { // Load history only if user is logged in
+    await loadHistoryRecords()
+  }
   checkSpeechRecognitionSupport()
 })
 
 onUnmounted(() => {
+  // Ensure cleanup happens even if the component is unmounted during recording
   if (isRecording.value) {
-    stopRecording()
+    stopRecording() // This will also call speechRecognizer.stopRecognition()
   }
   if (recordingInterval) {
     clearInterval(recordingInterval)
   }
   if (audioElement) {
     audioElement.pause()
+    // Clean up the object URL if it was created
+    if (audioElement.src) {
+      URL.revokeObjectURL(audioElement.src)
+    }
   }
 })
 </script>
