@@ -1,0 +1,58 @@
+好的，没问题。我用中文为你详细解释一下如何解决这些代码错误。
+
+你提供的错误日志非常有用，我们可以根据它来逐一修复。
+
+-----
+
+### 1\. 修复 `src/lib/speechRecognition.ts` 文件
+
+  * **问题所在**：错误 `TS2693: 'SpeechRecognition' only refers to a type, but is being used as a value here` 的意思是，你的代码把 `SpeechRecognition` 这个 TypeScript 的“类型定义”当作一个实际存在的“东西”（比如一个类或者对象）来使用了。
+  * **解决方案**：真正的语音识别功能存在于浏览器的 `window` 对象上。你需要修改代码，让它引用 `window.SpeechRecognition` 和 `window.webkitSpeechRecognition`。
+
+-----
+
+### 2\. 修复 `src/pages/ParaphrasePage.vue` 文件
+
+这个文件有好几个不同的问题，我们一个个来看。
+
+**A. 关于 `error_message` 属性**
+
+  * **问题所在**：错误 `Object literal may only specify known properties, and 'error_message' does not exist...` 的意思是，你正尝试创建一个包含 `error_message` 属性的对象，但是这个对象的“类型”定义里并没有声明过这个属性。
+  * **解决方案**：你需要找到定义这个评估结果的类型（`type` 或者 `interface`），然后在类型定义里加上 `error_message?: string;`。问号表示这是一个可选属性。
+
+**B. 关于在 `void` 函数上使用 `.catch`**
+
+  * **问题所在**：错误 `Property 'catch' does not exist on type 'void'` 的意思是，`speechRecognizer.stopRecognition()` 这个函数本身没有返回值（返回类型是 `void`），它不是一个 Promise，所以你不能在它后面使用 `.catch()` 来捕获错误。
+  * **解决方案**：直接删掉 `.catch()` 这部分代码即可。
+      * **把这行**：`speechRecognizer.stopRecognition().catch(err => ...)`
+      * **改成**：`speechRecognizer.stopRecognition()`
+
+**C. 关于 `item.issue` 和 `item.suggestion` 属性**
+
+  * **问题所在**：错误 `Property 'issue' does not exist on type 'string'` 的意思是，你的 Vue 模板在循环一个数组时，把数组里的每一项 `item` 都错误地当成了一个普通的字符串（`string`）。但实际上，这个 `item` 应该是一个包含 `issue` 和 `suggestion` 属性的对象。
+  * **解决方案**：你需要找到定义这个数组的地方（很可能是一个 `ref([])` 或者 `reactive([])`），然后为它指定正确的类型。例如，如果它现在是 `ref<string[]>`，你需要把它改成类似 `ref<{ issue?: string; suggestion?: string }[]>` 这样的对象数组类型。
+
+-----
+
+### 3\. 修复 `src/pages/StudyPage.vue` 文件
+
+  * **问题所在**：错误 `Property 'created_at' is missing...` 非常明确，意思是你的代码里有一个用于加载时占位的 `paragraph` 对象，但它缺少了 `created_at` 这个属性，而你的 `Paragraph` 类型定义里要求必须有这个属性。
+
+  * **解决方案**：给这个占位的对象加上 `created_at` 属性，并给它一个默认值。
+
+      * **操作**：在 `StudyPage.vue` 文件里找到 `paragraphs: [{...}]` 这个对象，并像下面这样添加 `created_at` 这一行：
+
+        ```typescript
+        paragraphs: [{
+          id: 'fallback-1',
+          title: '加载中...',
+          content: '正在从数据库获取内容，请稍候。',
+          section: '...',
+          order_index: 1,
+          fill_blanks: [],
+          potential_qa: [],
+          created_at: new Date().toISOString() // <-- 加上这一行
+        }]
+        ```
+
+请根据以上说明修改你的代码，保存文件后，再重新尝试部署。这次构建应该就能成功了。
