@@ -748,19 +748,19 @@ const processRecording = async () => {
 
     // 使用流式AI评估
     const result = await siliconFlowAPI.evaluateParaphrase(
-      paragraph.value?.content || '',
-      recordedText.value,
-      (progress) => {
-        // 流式更新评估进度
-        evaluationProgress.value = progress
-        console.log('📊 [DEBUG] 评估进度:', progress.length, '字符')
-      },
-      abortController.value.signal
-    ).catch(error => {
-      // 正确处理Promise拒绝
-      console.error('❌ [ERROR] AI评估Promise被拒绝:', error)
-      throw error
-    })
+          paragraph.value?.content || '',
+          recordedText.value,
+          (progress) => {
+            // 流式更新评估进度
+            evaluationProgress.value = progress
+            console.log('📊 [DEBUG] 评估进度:', progress.length, '字符')
+          },
+          abortController.value.signal
+        ).catch(error => {
+          // 正确处理Promise拒绝
+          console.error('❌ [ERROR] AI评估Promise被拒绝:', error)
+          throw error
+        })
 
     console.log('✅ [DEBUG] AI评估成功:', result)
 
@@ -872,12 +872,12 @@ const clearHistory = async () => {
 
     // 清空本地历史记录
     historyRecords.value = []
-    
+
     console.log('历史记录已清除')
-    
+
     // 可选：显示成功提示
     // alert('历史记录已清除')
-    
+
   } catch (error) {
     console.error('清除历史记录失败:', error)
     alert(`清除历史记录失败: ${error.message || '未知错误'}`)
@@ -894,7 +894,7 @@ const loadParagraph = async () => {
 
   try {
     console.log('正在加载段落:', paragraphId)
-    
+
     // 首先尝试使用custom_id查询
     let { data, error } = await supabase
       .from('paragraphs')
@@ -910,7 +910,7 @@ const loadParagraph = async () => {
         .select('*')
         .eq('id', paragraphId)
         .single()
-      
+
       data = result.data
       error = result.error
     }
@@ -927,10 +927,10 @@ const loadParagraph = async () => {
 
     paragraph.value = data
     console.log('段落加载成功:', data.title)
-    
+
   } catch (error) {
     console.error('加载段落失败:', error)
-    
+
     // 尝试从本地JSON文件加载作为备用方案
     try {
       console.log('尝试从本地文件加载段落...')
@@ -938,7 +938,7 @@ const loadParagraph = async () => {
       if (response.ok) {
         const paragraphsData = await response.json()
         const found = paragraphsData.find((p: any) => p.id === paragraphId || p.custom_id === paragraphId)
-        
+
         if (found) {
           paragraph.value = {
             id: found.id,
@@ -957,7 +957,7 @@ const loadParagraph = async () => {
     } catch (localError) {
       console.warn('本地文件加载也失败:', localError)
     }
-    
+
     // 如果所有方法都失败，显示错误并返回
     alert(`加载段落失败: ${error.message || '未知错误'}\n段落ID: ${paragraphId}`)
     router.push('/study').catch(err => console.error('路由跳转失败:', err))

@@ -336,7 +336,8 @@ const loadParagraphs = async () => {
           section: paragraph.section,
           order_index: paragraph.order_index,
           fill_blanks: paragraph.fill_blanks || [],
-          potential_qa: paragraph.potential_qa || []
+          potential_qa: paragraph.potential_qa || [],
+          created_at: new Date().toISOString()
         })
         return acc
       }, {})

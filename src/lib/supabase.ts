@@ -54,6 +54,13 @@ export interface UserParaphraseEvaluation {
     strengths: string[]
     improvements: string[]
     overall_feedback: string
+    evaluation_type?: string
+    accuracy_score?: number
+    completeness_score?: number
+    clarity_score?: number
+    presentation_score?: number
+    key_terms?: string[]
+    presentation_tips?: string[]
   }
   score: number
   created_at: string

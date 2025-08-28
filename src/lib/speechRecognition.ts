@@ -67,8 +67,10 @@ class BrowserSpeechRecognition implements SpeechRecognitionService {
     }
 
     try {
-      const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition
-      this.recognition = new SpeechRecognition()
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+      const recognition = new SpeechRecognition()
+
+      this.recognition = recognition
 
       this.recognition.continuous = true
       this.recognition.interimResults = true
