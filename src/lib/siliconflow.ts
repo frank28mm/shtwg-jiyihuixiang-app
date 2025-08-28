@@ -42,6 +42,13 @@ class SiliconFlowAPI {
     try {
       console.log('🌐 [DEBUG] 发起SiliconFlow API请求...')
       
+      // 检查信号是否已经被取消
+      if (options?.signal?.aborted) {
+        const abortError = new Error('请求已被取消')
+        abortError.name = 'AbortError'
+        throw abortError
+      }
+      
       const response = await fetch(`${this.baseUrl}/chat/completions`, {
         method: 'POST',
         mode: 'cors',
@@ -62,12 +69,19 @@ class SiliconFlowAPI {
 
       console.log('📡 [DEBUG] API响应状态:', response.status, response.statusText)
 
+      // 再次检查信号状态
+      if (options?.signal?.aborted) {
+        const abortError = new Error('请求已被取消')
+        abortError.name = 'AbortError'
+        throw abortError
+      }
+
       if (!response.ok) {
         let errorMessage = `SiliconFlow API error: ${response.status} ${response.statusText}`
         
         try {
           const errorText = await response.text()
-          console.error('❌ [ERROR] API错误响应:', errorText)
+          console.error('❌ [ERROR] API错误响应:', errorText.substring(0, 500))
           
           // 尝试解析错误JSON
           try {
@@ -110,6 +124,14 @@ class SiliconFlowAPI {
 
         try {
           while (true) {
+            // 检查取消信号
+            if (options?.signal?.aborted) {
+              reader.releaseLock();
+              const abortError = new Error('流式读取已被取消')
+              abortError.name = 'AbortError'
+              throw abortError
+            }
+
             const { done, value } = await reader.read();
             if (done) break;
 
@@ -126,7 +148,11 @@ class SiliconFlowAPI {
                   const content = parsed.choices?.[0]?.delta?.content || '';
                   if (content) {
                     fullContent += content;
-                    options?.onProgress?.(fullContent);
+                    try {
+                      options?.onProgress?.(fullContent);
+                    } catch (progressError) {
+                      console.warn('进度回调出错:', progressError);
+                    }
                   }
                 } catch (e) {
                   console.warn('Failed to parse streaming chunk:', e);
@@ -135,7 +161,11 @@ class SiliconFlowAPI {
             }
           }
         } finally {
-          reader.releaseLock();
+          try {
+            reader.releaseLock();
+          } catch (releaseError) {
+            console.warn('释放reader锁失败:', releaseError);
+          }
         }
 
         return fullContent || '抱歉，我无法回答这个问题。';
@@ -148,7 +178,7 @@ class SiliconFlowAPI {
       console.error('❌ [ERROR] SiliconFlow API调用失败:', error)
       
       // 检查是否是取消错误
-      if (signal?.aborted || (error as Error).name === 'AbortError') {
+      if (options?.signal?.aborted || (error as Error).name === 'AbortError') {
         const abortError = new Error('评估已被取消')
         abortError.name = 'AbortError'
         throw abortError

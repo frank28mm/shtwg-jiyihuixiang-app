@@ -684,79 +684,71 @@ const processRecording = async () => {
     console.log('⚠️ [DEBUG] 使用备用评估结果:', fallbackEvaluation)
     // 保存评估结果
     if (authStore.user && paragraph.value) {
-      await saveEvaluation(recordedText.value, fallbackEvaluation)
+      try {
+        await saveEvaluation(recordedText.value, fallbackEvaluation)
+      } catch (saveError) {
+        console.error('❌ [ERROR] 保存评估结果失败:', saveError)
+      }
     }
     return
   }
 
+  // 设置默认状态
+  isEvaluating.value = true
+  evaluationProgress.value = ''
+  evaluation.value = null
+
   try {
     console.log('🤖 [DEBUG] 尝试调用AI评估...')
 
-    // 清空之前的评估结果
-    evaluation.value = null
-    isEvaluating.value = true
-    evaluationProgress.value = ''
-
-    // 创建新的AbortController
+    // 创建新的AbortController，确保之前的请求被取消
     if (abortController.value) {
       abortController.value.abort()
+      abortController.value = null
     }
     abortController.value = new AbortController()
 
-    // 设置超时机制（30秒）
-    const timeoutId = setTimeout(() => {
-      if (abortController.value) {
-        abortController.value.abort()
-        console.log('⏰ [WARNING] AI评估超时，使用备用评估')
-      }
-    }, 30000)
+    // 设置超时机制（25秒）
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        if (abortController.value && !abortController.value.signal.aborted) {
+          abortController.value.abort()
+          reject(new Error('AI评估超时'))
+        }
+      }, 25000)
+    })
 
     let result: string
     let aiEvaluationSuccess = false
 
     try {
-      // 使用流式AI评估
-      result = await siliconFlowAPI.evaluateParaphrase(
-        paragraph.value?.content || '',
-        recordedText.value,
-        (progress) => {
-          // 流式更新评估进度
-          evaluationProgress.value = progress
-          console.log('📊 [DEBUG] 评估进度:', progress.length, '字符')
-        },
-        abortController.value.signal
-      )
+      // 使用Promise.race确保超时处理
+      result = await Promise.race([
+        siliconFlowAPI.evaluateParaphrase(
+          paragraph.value?.content || '',
+          recordedText.value,
+          (progress) => {
+            // 流式更新评估进度
+            evaluationProgress.value = progress
+            console.log('📊 [DEBUG] 评估进度:', progress.length, '字符')
+          },
+          abortController.value.signal
+        ),
+        timeoutPromise
+      ])
       
-      clearTimeout(timeoutId)
       aiEvaluationSuccess = true
-      console.log('✅ [DEBUG] AI评估成功:', result)
+      console.log('✅ [DEBUG] AI评估成功:', result.substring(0, 200) + '...')
 
     } catch (apiError) {
-      clearTimeout(timeoutId)
-      
       // 检查是否是用户取消操作
-      if ((apiError as Error).name === 'AbortError') {
-        console.log('🛑 [DEBUG] 用户取消了AI评估')
+      if (abortController.value?.signal.aborted || (apiError as Error).name === 'AbortError') {
+        console.log('🛑 [DEBUG] AI评估被取消')
         return
       }
 
       console.error('❌ [ERROR] AI API调用失败:', apiError)
-      
-      // 使用智能备用评估
-      const fallbackEvaluation = generateIntelligentEvaluation(
-        recordedText.value,
-        paragraph.value?.content || '',
-        calculateSimilarity(recordedText.value, paragraph.value?.content || '')
-      )
-      evaluation.value = fallbackEvaluation
-      
-      // 保存备用评估结果
-      if (authStore.user && paragraph.value) {
-        await saveEvaluation(recordedText.value, fallbackEvaluation)
-      }
-      
-      console.log('🔄 [DEBUG] 使用智能备用评估:', evaluation.value)
-      return
+      throw apiError // 重新抛出错误，让外层catch处理
     }
 
     // 解析AI返回的JSON结果
@@ -787,14 +779,14 @@ const processRecording = async () => {
           parsedEvaluation.score = Math.max(0, Math.min(100, parsedEvaluation.score))
         }
         
-        console.log('✅ [DEBUG] JSON解析成功:', parsedEvaluation)
+        console.log('✅ [DEBUG] JSON解析成功:', parsedEvaluation.score, '分')
         
       } else {
         throw new Error('无法从AI响应中提取JSON')
       }
     } catch (parseError) {
       console.warn('⚠️ [WARNING] 解析AI评估结果失败:', parseError)
-      console.warn('⚠️ [WARNING] 原始AI响应:', result)
+      console.warn('⚠️ [WARNING] 原始AI响应前200字符:', result.substring(0, 200))
       
       // 使用智能备用评估
       parsedEvaluation = generateIntelligentEvaluation(
@@ -802,6 +794,7 @@ const processRecording = async () => {
         paragraph.value?.content || '', 
         calculateSimilarity(recordedText.value, paragraph.value?.content || '')
       )
+      aiEvaluationSuccess = false
     }
 
     // 补充评估元数据
@@ -815,31 +808,50 @@ const processRecording = async () => {
 
     // 保存评估结果
     if (authStore.user && paragraph.value) {
-      await saveEvaluation(recordedText.value, finalEvaluation)
-    }
-
-  } catch (error) {
-    console.error('❌ [ERROR] 处理录音结果时发生未知错误:', error)
-
-    // 最终备用方案
-    const fallbackEvaluation = generateIntelligentEvaluation(
-      recordedText.value,
-      paragraph.value?.content || '',
-      calculateSimilarity(recordedText.value, paragraph.value?.content || '')
-    )
-    evaluation.value = fallbackEvaluation
-
-    // 保存备用评估结果
-    if (authStore.user && paragraph.value) {
       try {
-        await saveEvaluation(recordedText.value, fallbackEvaluation)
+        await saveEvaluation(recordedText.value, finalEvaluation)
       } catch (saveError) {
         console.error('❌ [ERROR] 保存评估结果失败:', saveError)
       }
     }
 
-    console.log('🔄 [DEBUG] 使用最终备用评估:', evaluation.value)
+  } catch (error) {
+    // 检查是否是取消操作
+    if (abortController.value?.signal.aborted || (error as Error).name === 'AbortError') {
+      console.log('🛑 [DEBUG] 操作已取消')
+      return
+    }
+
+    console.error('❌ [ERROR] 处理录音结果时发生错误:', error)
+
+    // 使用智能备用评估作为最终方案
+    try {
+      const fallbackEvaluation = generateIntelligentEvaluation(
+        recordedText.value,
+        paragraph.value?.content || '',
+        calculateSimilarity(recordedText.value, paragraph.value?.content || '')
+      )
+      evaluation.value = fallbackEvaluation
+
+      // 保存备用评估结果
+      if (authStore.user && paragraph.value) {
+        await saveEvaluation(recordedText.value, fallbackEvaluation)
+      }
+
+      console.log('🔄 [DEBUG] 使用最终备用评估:', evaluation.value.score, '分')
+    } catch (fallbackError) {
+      console.error('❌ [ERROR] 备用评估也失败:', fallbackError)
+      // 设置一个最基本的评估结果
+      evaluation.value = {
+        score: 60,
+        strengths: ['已完成复述练习'],
+        improvements: ['建议重新尝试'],
+        overall_feedback: '评估服务暂时不可用，请稍后重试。',
+        evaluation_type: 'error'
+      }
+    }
   } finally {
+    // 确保状态清理
     isEvaluating.value = false
     evaluationProgress.value = ''
     
