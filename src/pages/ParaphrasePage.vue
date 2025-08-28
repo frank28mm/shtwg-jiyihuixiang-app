@@ -5,10 +5,8 @@
       <div class="max-w-4xl mx-auto">
         <div class="flex items-center justify-between mb-2 md:mb-0">
           <div class="flex items-center space-x-3 md:space-x-4">
-            <button
-              @click="goBack"
-              class="p-2 hover:bg-[#EAE2B7]/10 rounded-md transition-colors text-[#EAE2B7]/65 hover:text-[#F77F00]"
-            >
+            <button @click="goBack"
+              class="p-2 hover:bg-[#EAE2B7]/10 rounded-md transition-colors text-[#EAE2B7]/65 hover:text-[#F77F00]">
               <ArrowLeft class="w-5 h-5" />
             </button>
             <div>
@@ -24,20 +22,16 @@
         <!-- 移动端标题和历史记录按钮 -->
         <div class="md:hidden flex items-center justify-between">
           <p class="text-[#EAE2B7]/65 text-xs truncate flex-1 mr-3">{{ paragraph?.title }}</p>
-          <button
-            @click="showHistory = !showHistory"
-            class="px-2 py-1 text-xs bg-transparent border border-[#EAE2B7]/30 text-[#EAE2B7]/65 rounded-md hover:bg-[#EAE2B7]/5 transition-colors whitespace-nowrap"
-          >
+          <button @click="showHistory = !showHistory"
+            class="px-2 py-1 text-xs bg-transparent border border-[#EAE2B7]/30 text-[#EAE2B7]/65 rounded-md hover:bg-[#EAE2B7]/5 transition-colors whitespace-nowrap">
             {{ showHistory ? '隐藏' : '历史' }}
           </button>
         </div>
 
         <!-- 桌面端历史记录按钮 -->
         <div class="hidden md:block absolute top-4 right-4 space-x-2">
-          <button
-            @click="showHistory = !showHistory"
-            class="px-3 py-1 text-sm bg-transparent border border-[#EAE2B7]/30 text-[#EAE2B7]/65 rounded-md hover:bg-[#EAE2B7]/5 transition-colors"
-          >
+          <button @click="showHistory = !showHistory"
+            class="px-3 py-1 text-sm bg-transparent border border-[#EAE2B7]/30 text-[#EAE2B7]/65 rounded-md hover:bg-[#EAE2B7]/5 transition-colors">
             {{ showHistory ? '隐藏历史' : '查看历史' }}
           </button>
         </div>
@@ -64,14 +58,12 @@
             <div class="bg-[#003049] border border-[#EAE2B7]/20 rounded-lg p-4 md:p-8 text-center">
               <!-- 录音状态显示 -->
               <div class="mb-4 md:mb-6">
-                <div 
-                  :class="[
-                    'w-16 h-16 md:w-24 md:h-24 rounded-full mx-auto mb-3 md:mb-4 flex items-center justify-center transition-all duration-300',
-                    isRecording 
-                      ? 'bg-[#D62828]/20 border-2 border-[#D62828] animate-pulse' 
-                      : 'bg-[#F77F00]/10 border-2 border-[#F77F00] hover:bg-[#F77F00]/20'
-                  ]"
-                >
+                <div  :class="[
+                  'w-16 h-16 md:w-24 md:h-24 rounded-full mx-auto mb-3 md:mb-4 flex items-center justify-center transition-all duration-300',
+                  isRecording
+                    ? 'bg-[#D62828]/20 border-2 border-[#D62828] animate-pulse'
+                    : 'bg-[#F77F00]/10 border-2 border-[#F77F00] hover:bg-[#F77F00]/20'
+                ]">
                   <Mic :class="['w-6 h-6 md:w-8 md:h-8', isRecording ? 'text-[#D62828]' : 'text-[#F77F00]']" />
                 </div>
 
@@ -86,31 +78,20 @@
 
               <!-- 录音控制按钮 -->
               <div class="flex flex-col sm:flex-row items-center justify-center space-y-3 sm:space-y-0 sm:space-x-4">
-                <button
-                  v-if="!isRecording"
-                  @click="startRecording"
-                  :disabled="isProcessing"
-                  class="w-full sm:w-auto px-4 md:px-6 py-3 md:py-3 bg-[#F77F00] text-[#003049] rounded-lg hover:bg-[#F77F00]/90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 text-sm md:text-base min-h-[44px]"
-                >
+                <button v-if="!isRecording" @click="startRecording" :disabled="isProcessing"
+                  class="w-full sm:w-auto px-4 md:px-6 py-3 md:py-3 bg-[#F77F00] text-[#003049] rounded-lg hover:bg-[#F77F00]/90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 text-sm md:text-base min-h-[44px]">
                   <Mic class="w-4 h-4" />
                   <span>开始录音</span>
                 </button>
 
-                <button
-                  v-else
-                  @click="stopRecording"
-                  class="w-full sm:w-auto px-4 md:px-6 py-3 md:py-3 bg-[#D62828] text-white rounded-lg hover:bg-[#D62828]/90 transition-colors font-medium flex items-center justify-center space-x-2 text-sm md:text-base min-h-[44px]"
-                >
+                <button v-else @click="stopRecording"
+                  class="w-full sm:w-auto px-4 md:px-6 py-3 md:py-3 bg-[#D62828] text-white rounded-lg hover:bg-[#D62828]/90 transition-colors font-medium flex items-center justify-center space-x-2 text-sm md:text-base min-h-[44px]">
                   <Square class="w-4 h-4" />
                   <span>停止录音</span>
                 </button>
 
-                <button
-                  v-if="audioBlob && !isRecording"
-                  @click="playRecording"
-                  :disabled="isPlaying"
-                  class="w-full sm:w-auto px-4 py-3 bg-transparent border border-[#F77F00] text-[#F77F00] rounded-lg hover:bg-[#F77F00]/10 transition-colors disabled:opacity-50 flex items-center justify-center min-h-[44px]"
-                >
+                <button v-if="audioBlob && !isRecording" @click="playRecording" :disabled="isPlaying"
+                  class="w-full sm:w-auto px-4 py-3 bg-transparent border border-[#F77F00] text-[#F77F00] rounded-lg hover:bg-[#F77F00]/10 transition-colors disabled:opacity-50 flex items-center justify-center min-h-[44px]">
                   <Play v-if="!isPlaying" class="w-4 h-4" />
                   <Pause v-else class="w-4 h-4" />
                 </button>
@@ -136,20 +117,21 @@
               <div class="flex items-center justify-between mb-6">
                 <div class="text-3xl font-bold text-[#F77F00]">{{ evaluation.score }}分</div>
                 <div class="text-right">
-                  <div class="text-[#F77F00] font-bold text-lg" >{{ getScoreLevel(evaluation.score) }}</div>
+                  <div class="text-[#F77F00] font-bold text-lg">{{ getScoreLevel(evaluation.score) }}</div>
                   <div class="flex items-center space-x-2 mt-2">
                     <div class="w-32 h-2 bg-[#EAE2B7]/20 rounded-full overflow-hidden">
-                      <div 
+                      <div 
                         class="h-full bg-gradient-to-r from-[#D62828] via-[#FCBF49] to-[#F77F00] transition-all duration-500"
-                        :style="{ width: `${evaluation.score}%` }"
-                      ></div>
+                        :style="{ width: `${evaluation.score}%` }"></div>
                     </div>
                   </div>
                 </div>
               </div>
 
               <!-- 各维度评分 -->
-              <div v-if="evaluation.accuracy_score || evaluation.completeness_score || evaluation.clarity_score || evaluation.presentation_score" class="mb-6">
+              <div
+                v-if="evaluation.accuracy_score || evaluation.completeness_score || evaluation.clarity_score || evaluation.presentation_score"
+                class="mb-6">
                 <h3 class="text-[#EAE2B7] font-medium mb-3">各维度评分</h3>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div class="bg-[#EAE2B7]/5 rounded-lg p-3 text-center">
@@ -178,11 +160,8 @@
                   优点亮点
                 </h3>
                 <div class="space-y-2">
-                  <div 
-                    v-for="(strength, index) in evaluation.strengths" 
-                    :key="index" 
-                    class="bg-[#F77F00]/10 border-l-4 border-[#F77F00] rounded-r-lg p-3"
-                  >
+                  <div  v-for="(strength, index) in evaluation.strengths"   :key="index"  
+                    class="bg-[#F77F00]/10 border-l-4 border-[#F77F00] rounded-r-lg p-3">
                     <div class="text-[#F77F00] font-medium text-sm">{{ strength }}</div>
                   </div>
                 </div>
@@ -195,13 +174,12 @@
                   改进建议
                 </h3>
                 <div class="space-y-3">
-                  <div 
-                    v-for="(item, index) in evaluation.improvements" 
-                    :key="index" 
-                    class="bg-[#FCBF49]/10 border-l-4 border-[#FCBF49] rounded-r-lg p-3"
-                  >
-                    <div v-if="typeof item === 'object' && item !== null && 'issue' in item" class="text-[#FCBF49] font-medium text-sm mb-1">{{ item.issue }}</div>
-                    <div v-if="typeof item === 'object' && item !== null && 'suggestion' in item" class="text-[#EAE2B7]/80 text-xs">{{ item.suggestion }}</div>
+                  <div  v-for="(item, index) in evaluation.improvements"   :key="index"  
+                    class="bg-[#FCBF49]/10 border-l-4 border-[#FCBF49] rounded-r-lg p-3">
+                    <div v-if="typeof item === 'object' && item !== null && 'issue' in item"
+                      class="text-[#FCBF49] font-medium text-sm mb-1">{{ item.issue }}</div>
+                    <div v-if="typeof item === 'object' && item !== null && 'suggestion' in item"
+                      class="text-[#EAE2B7]/80 text-xs">{{ item.suggestion }}</div>
                     <div v-else-if="typeof item === 'string'" class="text-[#EAE2B7]/80 text-sm">{{ item }}</div>
                   </div>
                 </div>
@@ -214,11 +192,8 @@
                   关键词汇建议
                 </h3>
                 <div class="flex flex-wrap gap-2">
-                  <span 
-                    v-for="term in evaluation.key_terms" 
-                    :key="term" 
-                    class="px-2 py-1 bg-[#EAE2B7]/20 text-[#EAE2B7] text-xs rounded-full"
-                  >{{ term }}</span>
+                  <span  v-for="term in evaluation.key_terms"   :key="term"  
+                    class="px-2 py-1 bg-[#EAE2B7]/20 text-[#EAE2B7] text-xs rounded-full">{{ term }}</span>
                 </div>
               </div>
 
@@ -229,11 +204,8 @@
                   讲解技巧建议
                 </h3>
                 <div class="space-y-2">
-                  <div 
-                    v-for="(tip, index) in evaluation.presentation_tips" 
-                    :key="index" 
-                    class="text-[#EAE2B7]/80 text-sm bg-[#EAE2B7]/5 rounded-lg p-2"
-                  >{{ tip }}</div>
+                  <div  v-for="(tip, index) in evaluation.presentation_tips"   :key="index"  
+                    class="text-[#EAE2B7]/80 text-sm bg-[#EAE2B7]/5 rounded-lg p-2">{{ tip }}</div>
                 </div>
               </div>
 
@@ -279,19 +251,14 @@
               <div class="bg-[#EAE2B7]/5 border border-[#EAE2B7]/20 rounded-lg p-4 text-left">
                 <h3 class="text-[#F77F00] font-medium mb-2">AI思考过程：</h3>
                 <div class="space-y-2">
-                  <div 
-                    v-for="(step, index) in aiThinkingSteps" 
-                    :key="index"
-                    class="text-[#EAE2B7]/70 text-sm flex items-start"
-                  >
-                    <span 
-                      :class="[
-                        'w-2 h-2 rounded-full mt-2 mr-3 flex-shrink-0',
-                        step.status === 'processing' ? 'bg-[#F77F00] animate-pulse' :
+                  <div  v-for="(step, index) in aiThinkingSteps"   :key="index"
+                    class="text-[#EAE2B7]/70 text-sm flex items-start">
+                    <span  :class="[
+                      'w-2 h-2 rounded-full mt-2 mr-3 flex-shrink-0',
+                      step.status === 'processing' ? 'bg-[#F77F00] animate-pulse' :
                         step.status === 'completed' ? 'bg-[#008000]' :
-                        'bg-[#EAE2B7]/30'
-                      ]"
-                    ></span>
+                          'bg-[#EAE2B7]/30'
+                    ]"></span>
                     <span>{{ step.text }}</span>
                   </div>
                 </div>
@@ -302,45 +269,34 @@
       </main>
 
       <!-- 历史记录侧边栏 -->
-      <aside 
-        v-if="showHistory" 
-        :class="[
-          'border-l border-[#EAE2B7]/20 p-3 md:p-4 overflow-y-auto',
-          'md:w-80',
-          'fixed md:relative inset-0 md:inset-auto z-50 md:z-auto',
-          'bg-[#003049] md:bg-transparent',
-          'w-full md:w-80'
-        ]"
-      >
+      <aside  v-if="showHistory"   :class="[
+        'border-l border-[#EAE2B7]/20 p-3 md:p-4 overflow-y-auto',
+        'md:w-80',
+        'fixed md:relative inset-0 md:inset-auto z-50 md:z-auto',
+        'bg-[#003049] md:bg-transparent',
+        'w-full md:w-80'
+      ]">
         <div class="flex items-center justify-between mb-3 md:mb-4">
           <h2 class="text-lg font-semibold text-[#EAE2B7]">历史记录</h2>
           <div class="flex items-center space-x-2">
             <!-- 清除历史按钮 -->
-            <button
-              v-if="historyRecords.length > 0"
-              @click="confirmClearHistory"
+            <button v-if="historyRecords.length > 0" @click="confirmClearHistory"
               class="px-2 py-1 text-xs bg-transparent border border-[#D62828]/50 text-[#D62828] rounded-md hover:bg-[#D62828]/10 transition-colors"
-              title="清除所有历史记录"
-            >
+              title="清除所有历史记录">
               清除
             </button>
             <!-- 移动端关闭按钮 -->
-            <button 
-              @click="showHistory = false"
-              class="md:hidden p-2 hover:bg-[#EAE2B7]/10 rounded-md transition-colors text-[#EAE2B7]/65"
-            >
+            <button  @click="showHistory = false"
+              class="md:hidden p-2 hover:bg-[#EAE2B7]/10 rounded-md transition-colors text-[#EAE2B7]/65">
               <ArrowLeft class="w-5 h-5" />
             </button>
           </div>
         </div>
         <div class="space-y-3">
           <!-- 历史记录列表 -->
-          <div 
-            v-for="record in historyRecords" 
-            :key="record.id"
+          <div  v-for="record in historyRecords"   :key="record.id"
             class="bg-[#EAE2B7]/5 border border-[#EAE2B7]/20 rounded-lg p-3 cursor-pointer hover:bg-[#EAE2B7]/10 transition-colors"
-            @click="loadHistoryRecord(record)"
-          >
+            @click="loadHistoryRecord(record)">
             <div class="flex items-center justify-between mb-2">
               <span class="text-[#F77F00] font-medium text-sm md:text-base">{{ record.score }}分</span>
               <span class="text-[#EAE2B7]/50 text-xs">{{ formatDate(record.created_at) }}</span>
@@ -364,7 +320,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { 
+import {
   ArrowLeft, Mic, Square, Play, Pause, CheckCircle, AlertTriangle, Loader2, BookOpen
 } from 'lucide-vue-next'
 import { supabase } from '@/lib/supabase'
@@ -453,8 +409,8 @@ const checkSpeechRecognitionSupport = () => {
   if (!compatibility.supported) {
     recognitionStatus.value = compatibility.reason || '语音识别不可用'
   } else {
-    recognitionStatus.value = compatibility.currentService === 'iflytek' 
-      ? '使用科大讯飞语音识别' 
+    recognitionStatus.value = compatibility.currentService === 'iflytek'
+      ? '使用科大讯飞语音识别'
       : '使用浏览器原生语音识别'
   }
 }
@@ -508,7 +464,7 @@ const startRecording = async () => {
 
   } catch (error) {
     console.error('启动语音识别失败:', error)
-    alert(`启动失败: ${error.message || '未知错误'}`)
+    alert(`启动失败: ${(error as Error).message || '未知错误'}`)
     stopRecording() // 停止录音并清理
   }
 }
@@ -516,7 +472,7 @@ const startRecording = async () => {
 const stopRecording = async () => {
   try {
     // 停止语音识别
-    await speechRecognizer.stopRecognition()
+    speechRecognizer.stopRecognition()
 
     isRecording.value = false
 
@@ -747,15 +703,15 @@ const processRecording = async () => {
 
     // 使用流式AI评估
     const result = await siliconFlowAPI.evaluateParaphrase(
-          paragraph.value?.content || '',
-          recordedText.value,
-          (progress) => {
-            // 流式更新评估进度
-            evaluationProgress.value = progress
-            console.log('📊 [DEBUG] 评估进度:', progress.length, '字符')
-          },
-          abortController.value.signal
-        )
+      paragraph.value?.content || '',
+      recordedText.value,
+      (progress) => {
+        // 流式更新评估进度
+        evaluationProgress.value = progress
+        console.log('📊 [DEBUG] 评估进度:', progress.length, '字符')
+      },
+      abortController.value.signal
+    )
 
     console.log('✅ [DEBUG] AI评估成功:', result)
 
@@ -776,16 +732,16 @@ const processRecording = async () => {
     }
 
     // 补充评估元数据
-    evaluation.value = {
+    const finalEvaluation: EvaluationResult = {
       ...parsedEvaluation,
-      evaluation_type: 'ai',
       similarity_score: calculateSimilarity(recordedText.value, paragraph.value?.content || ''),
-      timestamp: new Date().toISOString()
-    }
+    };
+    finalEvaluation.evaluation_type = 'ai';
+    evaluation.value = finalEvaluation;
 
   } catch (error) {
     // 检查是否是用户取消操作
-    if (error.name === 'AbortError') {
+    if ((error as Error).name === 'AbortError') {
       console.log('🛑 [DEBUG] 用户取消了AI评估')
       return
     }
@@ -794,15 +750,11 @@ const processRecording = async () => {
 
     // 使用智能备用评估
     const fallbackEvaluation = generateIntelligentEvaluation(
-      recordedText.value, 
-      paragraph.value?.content || '', 
+      recordedText.value,
+      paragraph.value?.content || '',
       calculateSimilarity(recordedText.value, paragraph.value?.content || '')
     )
-
-    evaluation.value = {
-      ...fallbackEvaluation,
-      evaluation_type: 'fallback'
-    }
+    evaluation.value = fallbackEvaluation;
 
     console.log('🔄 [DEBUG] 使用智能备用评估:', evaluation.value)
   } finally {
@@ -821,7 +773,7 @@ const saveEvaluation = async (paraphrasedText: string, evaluationResult: Evaluat
         user_id: authStore.user.id,
         paragraph_id: paragraph.value.id, // Assuming paragraph.value.id is the UUID
         paraphrased_text: paraphrasedText,
-        evaluation_result: evaluationResult,
+        evaluation_result: evaluationResult as any, // Use type assertion to bypass strict checks if needed
         score: evaluationResult.score
       })
 
@@ -838,7 +790,7 @@ const saveEvaluation = async (paraphrasedText: string, evaluationResult: Evaluat
 const loadHistoryRecord = (record: UserParaphraseEvaluation) => {
   transcribedText.value = record.paraphrased_text
   recordedText.value = record.paraphrased_text // Ensure recordedText is also updated
-  evaluation.value = record.evaluation_result
+  evaluation.value = record.evaluation_result as EvaluationResult
 }
 
 // 确认清除历史记录
@@ -874,7 +826,7 @@ const clearHistory = async () => {
 
   } catch (error) {
     console.error('清除历史记录失败:', error)
-    alert(`清除历史记录失败: ${error.message || '未知错误'}`)
+    alert(`清除历史记录失败: ${(error as Error).message || '未知错误'}`)
   }
 }
 
@@ -953,7 +905,7 @@ const loadParagraph = async () => {
     }
 
     // 如果所有方法都失败，显示错误并返回
-    alert(`加载段落失败: ${error.message || '未知错误'}\n段落ID: ${paragraphId}`)
+    alert(`加载段落失败: ${(error as Error).message || '未知错误'}\n段落ID: ${paragraphId}`)
     router.push('/study').catch(err => console.error('路由跳转失败:', err))
   }
 }
