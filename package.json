@@ -22,6 +22,7 @@
     "lucide-vue-next": "^0.511.0",
     "node-fetch": "^3.3.2",
     "pinia": "^3.0.3",
+    "shtwg-jiyihuixiang-app_2.0": "file:",
     "tailwind-merge": "^3.3.0",
     "vue": "^3.4.15",
     "vue-router": "^4.2.5"
