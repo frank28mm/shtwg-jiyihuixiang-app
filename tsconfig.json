@@ -13,7 +13,7 @@
         "./src/*"
       ]
     },
-    "lib": ["DOM", "ES2020"],
+    "lib": ["DOM", "DOM.Iterable", "ES2020"],
     "types": [
       "node",
       "express"
