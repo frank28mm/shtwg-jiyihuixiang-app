@@ -58,14 +58,12 @@
             <div class="bg-[#003049] border border-[#EAE2B7]/20 rounded-lg p-4 md:p-8 text-center">
               <!-- 录音状态显示 -->
               <div class="mb-4 md:mb-6">
-                <div  :class="[
+                <div  :class="[
                   'w-16 h-16 md:w-24 md:h-24 rounded-full mx-auto mb-3 md:mb-4 flex items-center justify-center transition-all duration-300',
                   isRecording
                     ? 'bg-[#D62828]/20 border-2 border-[#D62828] animate-pulse'
                     : 'bg-[#F77F00]/10 border-2 border-[#F77F00] hover:bg-[#F77F00]/20'
-                ]">
-                  <Mic :class="['w-6 h-6 md:w-8 md:h-8', isRecording ? 'text-[#D62828]' : 'text-[#F77F00]']" />
-                </div>
+                ]"></div>
 
                 <div class="text-[#EAE2B7] mb-2 text-sm md:text-base">
                   {{ isRecording ? '正在录音...' : '点击开始录音' }}
@@ -120,7 +118,7 @@
                   <div class="text-[#F77F00] font-bold text-lg">{{ getScoreLevel(evaluation.score) }}</div>
                   <div class="flex items-center space-x-2 mt-2">
                     <div class="w-32 h-2 bg-[#EAE2B7]/20 rounded-full overflow-hidden">
-                      <div 
+                      <div
                         class="h-full bg-gradient-to-r from-[#D62828] via-[#FCBF49] to-[#F77F00] transition-all duration-500"
                         :style="{ width: `${evaluation.score}%` }"></div>
                     </div>
@@ -160,7 +158,7 @@
                   优点亮点
                 </h3>
                 <div class="space-y-2">
-                  <div  v-for="(strength, index) in evaluation.strengths"   :key="index"  
+                  <div  v-for="(strength, index) in evaluation.strengths"   :key="`strength-${index}`"
                     class="bg-[#F77F00]/10 border-l-4 border-[#F77F00] rounded-r-lg p-3">
                     <div class="text-[#F77F00] font-medium text-sm">{{ strength }}</div>
                   </div>
@@ -174,7 +172,7 @@
                   改进建议
                 </h3>
                 <div class="space-y-3">
-                  <div  v-for="(item, index) in evaluation.improvements"   :key="index"  
+                  <div  v-for="(item, index) in evaluation.improvements"   :key="`improvement-${index}`"
                     class="bg-[#FCBF49]/10 border-l-4 border-[#FCBF49] rounded-r-lg p-3">
                     <div v-if="typeof item === 'object' && item !== null && 'issue' in item"
                       class="text-[#FCBF49] font-medium text-sm mb-1">{{ item.issue }}</div>
@@ -192,7 +190,7 @@
                   关键词汇建议
                 </h3>
                 <div class="flex flex-wrap gap-2">
-                  <span  v-for="term in evaluation.key_terms"   :key="term"  
+                  <span  v-for="term in evaluation.key_terms"   :key="`term-${term}`"
                     class="px-2 py-1 bg-[#EAE2B7]/20 text-[#EAE2B7] text-xs rounded-full">{{ term }}</span>
                 </div>
               </div>
@@ -204,7 +202,7 @@
                   讲解技巧建议
                 </h3>
                 <div class="space-y-2">
-                  <div  v-for="(tip, index) in evaluation.presentation_tips"   :key="index"  
+                  <div  v-for="(tip, index) in evaluation.presentation_tips"   :key="index"
                     class="text-[#EAE2B7]/80 text-sm bg-[#EAE2B7]/5 rounded-lg p-2">{{ tip }}</div>
                 </div>
               </div>
@@ -251,9 +249,9 @@
               <div class="bg-[#EAE2B7]/5 border border-[#EAE2B7]/20 rounded-lg p-4 text-left">
                 <h3 class="text-[#F77F00] font-medium mb-2">AI思考过程：</h3>
                 <div class="space-y-2">
-                  <div  v-for="(step, index) in aiThinkingSteps"   :key="index"
+                  <div  v-for="(step, index) in aiThinkingSteps"   :key="index"
                     class="text-[#EAE2B7]/70 text-sm flex items-start">
-                    <span  :class="[
+                    <span  :class="[
                       'w-2 h-2 rounded-full mt-2 mr-3 flex-shrink-0',
                       step.status === 'processing' ? 'bg-[#F77F00] animate-pulse' :
                         step.status === 'completed' ? 'bg-[#008000]' :
@@ -269,7 +267,7 @@
       </main>
 
       <!-- 历史记录侧边栏 -->
-      <aside  v-if="showHistory"   :class="[
+      <aside  v-if="showHistory"   :class="[
         'border-l border-[#EAE2B7]/20 p-3 md:p-4 overflow-y-auto',
         'md:w-80',
         'fixed md:relative inset-0 md:inset-auto z-50 md:z-auto',
@@ -286,7 +284,7 @@
               清除
             </button>
             <!-- 移动端关闭按钮 -->
-            <button  @click="showHistory = false"
+            <button  @click="showHistory = false"
               class="md:hidden p-2 hover:bg-[#EAE2B7]/10 rounded-md transition-colors text-[#EAE2B7]/65">
               <ArrowLeft class="w-5 h-5" />
             </button>
@@ -294,7 +292,7 @@
         </div>
         <div class="space-y-3">
           <!-- 历史记录列表 -->
-          <div  v-for="record in historyRecords"   :key="record.id"
+          <div  v-for="record in historyRecords"   :key="record.id"
             class="bg-[#EAE2B7]/5 border border-[#EAE2B7]/20 rounded-lg p-3 cursor-pointer hover:bg-[#EAE2B7]/10 transition-colors"
             @click="loadHistoryRecord(record)">
             <div class="flex items-center justify-between mb-2">
@@ -554,7 +552,7 @@ const analyzeTranscriptionQuality = (text: string, originalContent: string): Qua
   }
 
   // 长度比例检查
-  const lengthRatio = originalWordCount > 0 ? wordCount / originalWordCount : 0
+  const lengthRatio = originalWordCount > 0 ? wordCount / originalContent.length : 0
   if (lengthRatio < 0.3) {
     return { isValid: false, reason: 'too_short_compared', score: 30 }
   }
