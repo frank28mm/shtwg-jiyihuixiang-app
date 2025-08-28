@@ -40,11 +40,15 @@ class SiliconFlowAPI {
     const isStreaming = options?.onProgress !== undefined;
     
     try {
+      console.log('🌐 [DEBUG] 发起SiliconFlow API请求...')
+      
       const response = await fetch(`${this.baseUrl}/chat/completions`, {
         method: 'POST',
+        mode: 'cors',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey}`
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Accept': 'application/json'
         },
         body: JSON.stringify({
           model: this.model,
@@ -56,9 +60,42 @@ class SiliconFlowAPI {
         signal: options?.signal
       })
 
+      console.log('📡 [DEBUG] API响应状态:', response.status, response.statusText)
+
       if (!response.ok) {
-        const errorText = await response.text()
-        throw new Error(`SiliconFlow API error: ${response.status} - ${errorText}`)
+        let errorMessage = `SiliconFlow API error: ${response.status} ${response.statusText}`
+        
+        try {
+          const errorText = await response.text()
+          console.error('❌ [ERROR] API错误响应:', errorText)
+          
+          // 尝试解析错误JSON
+          try {
+            const errorJson = JSON.parse(errorText)
+            if (errorJson.error?.message) {
+              errorMessage += ` - ${errorJson.error.message}`
+            }
+          } catch {
+            if (errorText.trim()) {
+              errorMessage += ` - ${errorText.substring(0, 200)}`
+            }
+          }
+        } catch (textError) {
+          console.error('❌ [ERROR] 无法读取错误响应:', textError)
+        }
+        
+        // 根据状态码提供更具体的错误信息
+        if (response.status === 401) {
+          errorMessage = 'API密钥无效或已过期，请检查 VITE_SILICONFLOW_API_KEY 配置'
+        } else if (response.status === 403) {
+          errorMessage = 'API访问被拒绝，请检查API密钥权限'
+        } else if (response.status === 429) {
+          errorMessage = 'API调用频率过高，请稍后重试'
+        } else if (response.status >= 500) {
+          errorMessage = 'SiliconFlow服务器暂时不可用，请稍后重试'
+        }
+        
+        throw new Error(errorMessage)
       }
 
       if (isStreaming) {
@@ -108,7 +145,26 @@ class SiliconFlowAPI {
         return data.choices[0]?.message?.content || '抱歉，我无法回答这个问题。'
       }
     } catch (error) {
-      console.error('SiliconFlow API error:', error)
+      console.error('❌ [ERROR] SiliconFlow API调用失败:', error)
+      
+      // 检查是否是取消错误
+      if (signal?.aborted || (error as Error).name === 'AbortError') {
+        const abortError = new Error('评估已被取消')
+        abortError.name = 'AbortError'
+        throw abortError
+      }
+      
+      // 检查是否是网络错误
+      if (error instanceof TypeError && error.message === 'Failed to fetch') {
+        throw new Error('网络连接失败，请检查网络设置后重试')
+      }
+      
+      // 检查是否是超时错误
+      if (error.name === 'TimeoutError' || error.message.includes('timeout')) {
+        throw new Error('请求超时，请稍后重试')
+      }
+      
+      // 重新抛出原始错误
       throw error
     }
   }
@@ -182,7 +238,14 @@ ${currentContent}
   ): Promise<string> {
     // 检查取消信号
     if (signal?.aborted) {
-      throw new Error('操作已被取消')
+      const abortError = new Error('操作已被取消')
+      abortError.name = 'AbortError'
+      throw abortError
+    }
+
+    // 检查API配置
+    if (!this.apiKey || this.apiKey === 'your_siliconflow_api_key_here') {
+      throw new Error('SiliconFlow API key 未配置，请在环境变量中设置 VITE_SILICONFLOW_API_KEY')
     }
     const prompt = `请作为专业的天文馆讲解员评估员，对以下复述内容进行专业评估。
 
