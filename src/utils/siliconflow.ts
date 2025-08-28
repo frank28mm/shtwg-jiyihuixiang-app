@@ -77,7 +77,7 @@ export async function callSiliconFlowAPI(
 
   try {
     console.log('🌐 [DEBUG] Making fetch request to:', `${baseUrl}/chat/completions`);
-
+    
     // 添加CORS和网络调试信息
     console.log('🔍 [DEBUG] Browser environment check:', {
       userAgent: navigator.userAgent,
@@ -85,10 +85,7 @@ export async function callSiliconFlowAPI(
       cookieEnabled: navigator.cookieEnabled,
       language: navigator.language
     });
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 20000); // 20秒超时
-
+    
     const response = await fetch(`${baseUrl}/chat/completions`, {
       method: 'POST',
       mode: 'cors', // 明确指定CORS模式
@@ -97,8 +94,7 @@ export async function callSiliconFlowAPI(
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`
       },
-      body: JSON.stringify(requestBody),
-      signal: controller.signal
+      body: JSON.stringify(requestBody)
     });
 
     console.log('📥 [DEBUG] Response received:', {
@@ -116,7 +112,7 @@ export async function callSiliconFlowAPI(
       } catch (parseError) {
         console.error('❌ [ERROR] Failed to parse error response:', parseError);
       }
-
+      
       const errorMessage = `API调用失败: ${response.status} ${response.statusText} - ${errorData.error?.message || '未知错误'}`;
       console.error('❌ [ERROR] Final error message:', errorMessage);
       throw new Error(errorMessage);
@@ -146,35 +142,39 @@ export async function callSiliconFlowAPI(
     });
 
     return content;
-  } catch (fetchError) {
-      clearTimeout(timeoutId);
-      throw fetchError;
-    }
   } catch (error) {
     console.error('❌ [ERROR] 硅基流动API调用错误:', error);
     console.error('❌ [ERROR] Error details:', {
       name: error?.name,
       message: error?.message,
-      stack: error?.stack?.substring(0, 500) + '...' // 截断长堆栈信息
+      stack: error?.stack,
+      cause: error?.cause
     });
-
-    // 网络错误特殊处理
-    if (error?.name === 'TypeError' && error?.message === 'Failed to fetch') {
+    
+    // 详细的错误分类和处理
+    let enhancedError = error;
+    
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
       console.error('🌐 [ERROR] Network fetch failed - possible causes:');
       console.error('  - CORS policy blocking the request');
       console.error('  - Network connectivity issues');
       console.error('  - DNS resolution problems');
       console.error('  - Firewall or proxy blocking');
-
-      throw new NetworkError('网络请求失败：可能是网络连接问题、CORS策略限制或防火墙阻止。请检查网络连接并稍后重试。', error);
+      
+      enhancedError = new Error('网络请求失败：可能是网络连接问题、CORS策略限制或防火墙阻止。请检查网络连接并稍后重试。');
+      enhancedError.name = 'NetworkError';
+      enhancedError.originalError = error;
+    } else if (error?.name === 'AbortError') {
+      enhancedError = new Error('请求被中止：可能是网络超时或用户取消了请求。');
+      enhancedError.name = 'AbortError';
+      enhancedError.originalError = error;
+    } else if (error?.message?.includes('ERR_NETWORK')) {
+      enhancedError = new Error('网络错误：无法连接到硅基流动服务器，请检查网络连接。');
+      enhancedError.name = 'NetworkError';
+      enhancedError.originalError = error;
     }
-
-    // 超时错误处理
-    if (error?.name === 'AbortError') {
-      throw new NetworkError('请求超时：服务器响应时间过长，请稍后重试。', error);
-    }
-
-    throw error;
+    
+    throw enhancedError;
   }
 }
 
@@ -217,35 +217,20 @@ export function getDefaultModel(): SiliconFlowModel {
 // 备用回复机制
 export function getFallbackResponse(query: string): string {
   console.log('🔄 [DEBUG] Using fallback response for query:', query);
-
+  
   const fallbackResponses = {
     greeting: '您好！我是上海天文馆的AI讲解员。虽然当前网络连接有些问题，但我很乐意为您介绍天文知识。请稍后重试，或者您可以浏览展区内容了解更多信息。',
     question: '抱歉，由于网络连接问题，我暂时无法为您提供详细回答。建议您稍后重试，或者查看展区的详细介绍内容。',
     general: '很抱歉，当前AI服务暂时不可用。您可以：\n\n1. 检查网络连接后重试\n2. 浏览展区的详细内容\n3. 稍后再次尝试提问\n\n感谢您的理解！'
   };
-
+  
   const lowerQuery = query.toLowerCase();
-
+  
   if (lowerQuery.includes('你好') || lowerQuery.includes('hello') || lowerQuery.includes('hi')) {
     return fallbackResponses.greeting;
   } else if (lowerQuery.includes('?') || lowerQuery.includes('？') || lowerQuery.includes('什么') || lowerQuery.includes('如何') || lowerQuery.includes('为什么')) {
     return fallbackResponses.question;
   } else {
     return fallbackResponses.general;
-  }
-}
-
-// 自定义网络错误类，用于区分不同类型的网络错误
-class NetworkError extends Error {
-  originalError?: Error;
-
-  constructor(message: string, originalError?: Error) {
-    super(message);
-    this.name = 'NetworkError';
-    this.originalError = originalError;
-    // 保持堆栈跟踪
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, NetworkError);
-    }
   }
 }
