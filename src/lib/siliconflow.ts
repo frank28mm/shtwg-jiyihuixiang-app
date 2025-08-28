@@ -22,7 +22,7 @@ class SiliconFlowAPI {
   constructor() {
     this.apiKey = import.meta.env.VITE_SILICONFLOW_API_KEY
     this.baseUrl = import.meta.env.VITE_SILICONFLOW_BASE_URL || 'https://api.siliconflow.cn/v1'
-    this.model = import.meta.env.VITE_SILICONFLOW_MODEL || 'Qwen/Qwen2.5-7B-Instruct'
+    this.model = import.meta.env.VITE_SILICONFLOW_MODEL || 'Pro/moonshotai/Kimi-K2-Instruct'
 
     if (!this.apiKey || this.apiKey === 'your_siliconflow_api_key_here') {
       console.warn('SiliconFlow API key not configured. Please set VITE_SILICONFLOW_API_KEY in your .env file.')

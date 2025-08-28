@@ -2,6 +2,7 @@
 
 // 支持的模型列表
 export const SILICONFLOW_MODELS = {
+  // DeepSeek 系列
   'Pro/deepseek-ai/DeepSeek-V3.1': {
     name: 'DeepSeek-V3.1',
     description: '深度求索最新模型，推理能力强',
@@ -14,11 +15,95 @@ export const SILICONFLOW_MODELS = {
     maxTokens: 8192,
     temperature: 0.6
   },
+  'deepseek-ai/DeepSeek-V2.5': {
+    name: 'DeepSeek-V2.5',
+    description: 'DeepSeek经典版本，性能稳定',
+    maxTokens: 4096,
+    temperature: 0.7
+  },
+  
+  // Moonshot AI 系列
   'Pro/moonshotai/Kimi-K2-Instruct': {
     name: 'Kimi-K2',
     description: 'Moonshot AI模型，对话能力出色',
     maxTokens: 8192,
     temperature: 0.8
+  },
+  'moonshot-v1-8k': {
+    name: 'Moonshot-8K',
+    description: 'Moonshot标准版，适合日常对话',
+    maxTokens: 8192,
+    temperature: 0.7
+  },
+  'moonshot-v1-32k': {
+    name: 'Moonshot-32K',
+    description: 'Moonshot长文本版，处理大量文本',
+    maxTokens: 32768,
+    temperature: 0.7
+  },
+  
+  // Qwen 系列
+  'Qwen/Qwen2.5-7B-Instruct': {
+    name: 'Qwen2.5-7B',
+    description: '通义千问2.5，均衡性能',
+    maxTokens: 4096,
+    temperature: 0.7
+  },
+  'Qwen/Qwen2.5-14B-Instruct': {
+    name: 'Qwen2.5-14B',
+    description: '通义千问2.5增强版，更强推理',
+    maxTokens: 4096,
+    temperature: 0.6
+  },
+  'Qwen/Qwen2.5-72B-Instruct': {
+    name: 'Qwen2.5-72B',
+    description: '通义千问2.5旗舰版，顶级性能',
+    maxTokens: 4096,
+    temperature: 0.6
+  },
+  
+  // ChatGLM 系列
+  'THUDM/glm-4-9b-chat': {
+    name: 'GLM-4-9B',
+    description: '智谱ChatGLM-4，中文优化',
+    maxTokens: 4096,
+    temperature: 0.7
+  },
+  'THUDM/chatglm3-6b': {
+    name: 'ChatGLM3-6B',
+    description: '智谱ChatGLM3，轻量高效',
+    maxTokens: 2048,
+    temperature: 0.8
+  },
+  
+  // Yi 系列
+  '01-ai/Yi-1.5-9B-Chat': {
+    name: 'Yi-1.5-9B',
+    description: '零一万物Yi模型，创新思维',
+    maxTokens: 4096,
+    temperature: 0.7
+  },
+  '01-ai/Yi-1.5-34B-Chat': {
+    name: 'Yi-1.5-34B',
+    description: '零一万物Yi大模型，专业级别',
+    maxTokens: 4096,
+    temperature: 0.6
+  },
+  
+  // Baichuan 系列
+  'baichuan-inc/Baichuan2-13B-Chat': {
+    name: 'Baichuan2-13B',
+    description: '百川智能大模型，中文理解佳',
+    maxTokens: 4096,
+    temperature: 0.7
+  },
+  
+  // InternLM 系列
+  'internlm/internlm2_5-7b-chat': {
+    name: 'InternLM2.5-7B',
+    description: '上海AI实验室模型，学术优化',
+    maxTokens: 4096,
+    temperature: 0.7
   }
 } as const;
 
@@ -211,7 +296,43 @@ export function getAstronomyGuidePrompt(currentContent?: string) {
 // 获取默认模型
 export function getDefaultModel(): SiliconFlowModel {
   const { defaultModel } = getApiConfig();
-  return defaultModel as SiliconFlowModel;
+  // 确保默认模型在支持列表中
+  if (defaultModel in SILICONFLOW_MODELS) {
+    return defaultModel as SiliconFlowModel;
+  }
+  // 如果配置的默认模型不在列表中，使用第一个可用模型
+  return 'Pro/deepseek-ai/DeepSeek-V3.1';
+}
+
+// 获取推荐的模型（根据用途）
+export function getRecommendedModels() {
+  return {
+    // 推理和逻辑思考
+    reasoning: ['Pro/deepseek-ai/DeepSeek-R1', 'Qwen/Qwen2.5-72B-Instruct', '01-ai/Yi-1.5-34B-Chat'],
+    // 日常对话
+    conversation: ['Pro/moonshotai/Kimi-K2-Instruct', 'moonshot-v1-8k', 'THUDM/glm-4-9b-chat'],
+    // 长文本处理
+    longText: ['moonshot-v1-32k', 'Pro/deepseek-ai/DeepSeek-V3.1'],
+    // 中文优化
+    chinese: ['THUDM/glm-4-9b-chat', 'baichuan-inc/Baichuan2-13B-Chat', 'Qwen/Qwen2.5-14B-Instruct'],
+    // 轻量快速
+    lightweight: ['Qwen/Qwen2.5-7B-Instruct', 'THUDM/chatglm3-6b', '01-ai/Yi-1.5-9B-Chat']
+  };
+}
+
+// 根据任务类型选择最适合的模型
+export function getModelForTask(taskType: 'reasoning' | 'conversation' | 'longText' | 'chinese' | 'lightweight' = 'conversation'): SiliconFlowModel {
+  const recommendations = getRecommendedModels();
+  const models = recommendations[taskType];
+  
+  // 返回第一个推荐的模型，如果不存在则返回默认模型
+  for (const model of models) {
+    if (model in SILICONFLOW_MODELS) {
+      return model as SiliconFlowModel;
+    }
+  }
+  
+  return getDefaultModel();
 }
 
 // 备用回复机制
