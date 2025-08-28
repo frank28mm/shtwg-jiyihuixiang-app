@@ -305,30 +305,118 @@ const initMobileOptimizations = () => {
 // 加载数据
 const loadParagraphs = async () => {
   try {
-    // 从本地JSON文件加载数据
-    const response = await fetch('/shanghai_astronomy_museum.json')
-    const paragraphsData = await response.json()
+    console.log('开始加载段落数据...')
     
-    // 从Markdown文件加载原文内容
-    const markdownResponse = await fetch('/讲解逐字稿.md')
-    const markdownContent = await markdownResponse.text()
+    // 优先从Supabase加载数据
+    const { data: supabaseData, error: supabaseError } = await supabase
+      .from('paragraphs')
+      .select('*')
+      .order('section', { ascending: true })
+      .order('order_index', { ascending: true })
+
+    if (supabaseData && supabaseData.length > 0 && !supabaseError) {
+      console.log(`从Supabase加载了${supabaseData.length}个段落`)
+      
+      // 按展区和模块分组
+      const groupedData = supabaseData.reduce((acc: Record<string, Record<string, any[]>>, paragraph: any) => {
+        const section = paragraph.section || '默认展区'
+        const module = '默认模块' // Supabase数据可能没有module字段
+        
+        if (!acc[section]) {
+          acc[section] = {}
+        }
+        if (!acc[section][module]) {
+          acc[section][module] = []
+        }
+        
+        acc[section][module].push({
+          id: paragraph.custom_id || paragraph.id,
+          title: paragraph.title,
+          content: paragraph.content,
+          section: paragraph.section,
+          order_index: paragraph.order_index,
+          fill_blanks: paragraph.fill_blanks || [],
+          potential_qa: paragraph.potential_qa || []
+        })
+        return acc
+      }, {})
+
+      // 转换为sections格式
+      sections.value = Object.entries(groupedData).map(([sectionName, modules]) => ({
+        name: sectionName,
+        expanded: true,
+        modules: Object.entries(modules).map(([moduleName, paragraphs]) => ({
+          name: moduleName,
+          expanded: true,
+          paragraphs
+        }))
+      }))
+
+      // 默认选择第一个段落
+      if (sections.value.length > 0 && sections.value[0].modules.length > 0 && sections.value[0].modules[0].paragraphs.length > 0) {
+        selectedParagraph.value = sections.value[0].modules[0].paragraphs[0]
+      }
+      
+      console.log('从Supabase成功加载数据')
+      return
+    }
+    
+    console.log('Supabase数据为空，尝试加载本地文件...')
+    
+    // 备用方案：从本地JSON文件加载数据
+    let paragraphsData = []
+    let markdownContent = ''
+    
+    try {
+      const response = await fetch('/shanghai_astronomy_museum.json')
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+      paragraphsData = await response.json()
+      console.log(`从JSON文件加载了${paragraphsData.length}个段落`)
+    } catch (jsonError) {
+      console.warn('加载JSON文件失败:', jsonError)
+      // 使用默认数据
+      paragraphsData = [{
+        id: 'default-1',
+        title: '默认段落',
+        content: '这是一个默认段落，用于演示功能。',
+        section: '默认展区',
+        module: '默认模块',
+        fill_blanks: [],
+        potential_qa: []
+      }]
+    }
+    
+    try {
+      const markdownResponse = await fetch('/讲解逐字稿.md')
+      if (markdownResponse.ok) {
+        markdownContent = await markdownResponse.text()
+        console.log('成功加载Markdown文件')
+      }
+    } catch (markdownError) {
+      console.warn('加载Markdown文件失败:', markdownError)
+    }
     
     // 解析Markdown内容，创建段落映射
-    const markdownSections = parseMarkdownContent(markdownContent)
+    const markdownSections = markdownContent ? parseMarkdownContent(markdownContent) : {}
     
     // 按展区和模块分组并合并原文内容
     const groupedData = paragraphsData.reduce((acc: Record<string, Record<string, any[]>>, paragraph: any) => {
-      if (!acc[paragraph.section]) {
-        acc[paragraph.section] = {}
+      const section = paragraph.section || '默认展区'
+      const module = paragraph.module || '默认模块'
+      
+      if (!acc[section]) {
+        acc[section] = {}
       }
-      if (!acc[paragraph.section][paragraph.module]) {
-        acc[paragraph.section][paragraph.module] = []
+      if (!acc[section][module]) {
+        acc[section][module] = []
       }
       
       // 查找对应的原文内容
       const originalContent = findOriginalContent(markdownSections, paragraph.section, paragraph.title)
       
-      acc[paragraph.section][paragraph.module].push({
+      acc[section][module].push({
         ...paragraph,
         content: originalContent || paragraph.content // 优先使用原文，否则使用JSON中的内容
       })
@@ -350,8 +438,33 @@ const loadParagraphs = async () => {
     if (sections.value.length > 0 && sections.value[0].modules.length > 0 && sections.value[0].modules[0].paragraphs.length > 0) {
       selectedParagraph.value = sections.value[0].modules[0].paragraphs[0]
     }
+    
+    console.log('数据加载完成')
+    
   } catch (error) {
     console.error('加载段落数据失败:', error)
+    // 提供最基本的默认数据
+    sections.value = [{
+      name: '默认展区',
+      expanded: true,
+      modules: [{
+        name: '默认模块',
+        expanded: true,
+        paragraphs: [{
+          id: 'fallback-1',
+          title: '示例段落',
+          content: '这是一个示例段落，用于确保应用正常运行。请检查数据源配置。',
+          section: '默认展区',
+          order_index: 1,
+          fill_blanks: [],
+          potential_qa: []
+        }]
+      }]
+    }]
+    
+    if (sections.value[0].modules[0].paragraphs[0]) {
+      selectedParagraph.value = sections.value[0].modules[0].paragraphs[0]
+    }
   }
 }
 

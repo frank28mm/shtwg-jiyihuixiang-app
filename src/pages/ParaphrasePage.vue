@@ -888,16 +888,32 @@ const loadParagraph = async () => {
   const paragraphId = route.params.id as string
   if (!paragraphId) {
     console.error('缺少段落ID参数')
-    router.push('/study') // Navigate back if no ID
+    router.push('/study').catch(err => console.error('路由跳转失败:', err))
     return
   }
 
   try {
-    const { data, error } = await supabase
+    console.log('正在加载段落:', paragraphId)
+    
+    // 首先尝试使用custom_id查询
+    let { data, error } = await supabase
       .from('paragraphs')
       .select('*')
-      .eq('custom_id', paragraphId) // Assuming custom_id is the identifier used in route
+      .eq('custom_id', paragraphId)
       .single()
+
+    // 如果custom_id查询失败，尝试使用id查询
+    if (error && error.code === 'PGRST116') {
+      console.log('custom_id查询失败，尝试使用id查询...')
+      const result = await supabase
+        .from('paragraphs')
+        .select('*')
+        .eq('id', paragraphId)
+        .single()
+      
+      data = result.data
+      error = result.error
+    }
 
     if (error) {
       console.error('数据库查询错误:', error)
@@ -911,10 +927,40 @@ const loadParagraph = async () => {
 
     paragraph.value = data
     console.log('段落加载成功:', data.title)
+    
   } catch (error) {
     console.error('加载段落失败:', error)
+    
+    // 尝试从本地JSON文件加载作为备用方案
+    try {
+      console.log('尝试从本地文件加载段落...')
+      const response = await fetch('/shanghai_astronomy_museum.json')
+      if (response.ok) {
+        const paragraphsData = await response.json()
+        const found = paragraphsData.find((p: any) => p.id === paragraphId || p.custom_id === paragraphId)
+        
+        if (found) {
+          paragraph.value = {
+            id: found.id,
+            title: found.title,
+            content: found.content,
+            section: found.section,
+            order_index: found.order_index || 0,
+            fill_blanks: found.fill_blanks || [],
+            potential_qa: found.potential_qa || [],
+            created_at: new Date().toISOString()
+          }
+          console.log('从本地文件成功加载段落:', found.title)
+          return
+        }
+      }
+    } catch (localError) {
+      console.warn('本地文件加载也失败:', localError)
+    }
+    
+    // 如果所有方法都失败，显示错误并返回
     alert(`加载段落失败: ${error.message || '未知错误'}\n段落ID: ${paragraphId}`)
-    router.push('/study') // Navigate back on failure
+    router.push('/study').catch(err => console.error('路由跳转失败:', err))
   }
 }
 
