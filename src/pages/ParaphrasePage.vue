@@ -1,29 +1,30 @@
+
 <template>
-  <div class="min-h-screen bg-[#003049] flex flex-col safe-area-top safe-area-bottom">
+  <div class="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-50 flex flex-col safe-area-top safe-area-bottom">
     <!-- 顶部导航栏 -->
-    <header class="border-b border-[#EAE2B7]/20 p-3 md:p-4">
+    <header class="bg-white/80 backdrop-blur-sm border-b border-gray-200 p-3 md:p-4 shadow-light">
       <div class="max-w-4xl mx-auto">
         <div class="flex items-center justify-between mb-2 md:mb-0">
           <div class="flex items-center space-x-3 md:space-x-4">
             <button @click="goBack"
-              class="p-2 hover:bg-[#EAE2B7]/10 rounded-md transition-colors text-[#EAE2B7]/65 hover:text-[#F77F00]">
+              class="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-600 hover:text-primary-600">
               <ArrowLeft class="w-5 h-5" />
             </button>
             <div>
-              <h1 class="text-lg md:text-xl font-bold text-[#EAE2B7] flex items-center">
-                <Mic class="w-4 h-4 md:w-5 md:h-5 mr-2 text-[#F77F00]" />
+              <h1 class="text-lg md:text-xl font-bold text-gray-900 flex items-center">
+                <Mic class="w-4 h-4 md:w-5 md:h-5 mr-2 text-primary-500" />
                 复述训练
               </h1>
-              <p class="text-[#EAE2B7]/65 text-xs md:text-sm hidden md:block">{{ paragraph?.title }}</p>
+              <p class="text-gray-600 text-xs md:text-sm hidden md:block">{{ paragraph?.title }}</p>
             </div>
           </div>
         </div>
 
         <!-- 移动端标题和历史记录按钮 -->
         <div class="md:hidden flex items-center justify-between">
-          <p class="text-[#EAE2B7]/65 text-xs truncate flex-1 mr-3">{{ paragraph?.title }}</p>
+          <p class="text-gray-600 text-xs truncate flex-1 mr-3">{{ paragraph?.title }}</p>
           <button @click="showHistory = !showHistory"
-            class="px-2 py-1 text-xs bg-transparent border border-[#EAE2B7]/30 text-[#EAE2B7]/65 rounded-md hover:bg-[#EAE2B7]/5 transition-colors whitespace-nowrap">
+            class="px-3 py-1.5 text-xs bg-white border border-primary-200 text-primary-600 rounded-lg hover:bg-primary-50 transition-colors whitespace-nowrap shadow-light">
             {{ showHistory ? '隐藏' : '历史' }}
           </button>
         </div>
@@ -31,7 +32,7 @@
         <!-- 桌面端历史记录按钮 -->
         <div class="hidden md:block absolute top-4 right-4 space-x-2">
           <button @click="showHistory = !showHistory"
-            class="px-3 py-1 text-sm bg-transparent border border-[#EAE2B7]/30 text-[#EAE2B7]/65 rounded-md hover:bg-[#EAE2B7]/5 transition-colors">
+            class="px-4 py-2 text-sm bg-white border border-primary-200 text-primary-600 rounded-lg hover:bg-primary-50 transition-colors shadow-light">
             {{ showHistory ? '隐藏历史' : '查看历史' }}
           </button>
         </div>
@@ -44,9 +45,9 @@
         <div class="max-w-4xl mx-auto">
           <!-- 原文展示 -->
           <div class="mb-6 md:mb-8">
-            <h2 class="text-lg font-semibold text-[#EAE2B7] mb-3 md:mb-4">原文内容</h2>
-            <div class="bg-[#EAE2B7]/5 border border-[#EAE2B7]/20 rounded-lg p-4 md:p-6">
-              <div class="text-[#EAE2B7] leading-relaxed whitespace-pre-wrap text-sm md:text-base">
+            <h2 class="text-lg font-semibold text-gray-900 mb-3 md:mb-4">原文内容</h2>
+            <div class="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-xl p-4 md:p-6 shadow-light">
+              <div class="text-gray-600 leading-relaxed whitespace-pre-wrap text-sm md:text-base">
                 {{ paragraph?.content }}
               </div>
             </div>
@@ -54,27 +55,27 @@
 
           <!-- 录音区域 -->
           <div class="mb-6 md:mb-8">
-            <h2 class="text-lg font-semibold text-[#EAE2B7] mb-3 md:mb-4">语音复述</h2>
-            <div class="bg-[#003049] border border-[#EAE2B7]/20 rounded-lg p-4 md:p-8 text-center">
+            <h2 class="text-lg font-semibold text-gray-900 mb-3 md:mb-4">语音复述</h2>
+            <div class="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-xl p-4 md:p-8 text-center shadow-light">
               <!-- 录音状态显示 -->
               <div class="mb-4 md:mb-6">
                 <div  :class="[
                   'w-16 h-16 md:w-24 md:h-24 rounded-full mx-auto mb-3 md:mb-4 flex items-center justify-center transition-all duration-300',
                   isRecording
-                    ? 'bg-[#D62828]/20 border-2 border-[#D62828] animate-pulse'
-                    : 'bg-[#F77F00]/10 border-2 border-[#F77F00] hover:bg-[#F77F00]/20'
+                    ? 'bg-error-100 border-2 border-error-500 animate-pulse shadow-medium'
+                    : 'bg-primary-50 border-2 border-primary-500 hover:bg-primary-100 shadow-light hover:shadow-medium'
                 ]">
                   <Mic :class="[
                     'w-8 h-8 md:w-12 md:h-12',
-                    isRecording ? 'text-[#D62828]' : 'text-[#F77F00]'
+                    isRecording ? 'text-error-500' : 'text-primary-500'
                   ]" />
                 </div>
 
-                <div class="text-[#EAE2B7] mb-2 text-sm md:text-base">
+                <div class="text-gray-900 mb-2 text-sm md:text-base font-medium">
                   {{ isRecording ? '正在录音...' : '点击开始录音' }}
                 </div>
 
-                <div v-if="recordingTime > 0" class="text-[#EAE2B7]/65 text-xs md:text-sm">
+                <div v-if="recordingTime > 0" class="text-gray-500 text-xs md:text-sm">
                   录音时长: {{ formatTime(recordingTime) }}
                 </div>
               </div>
@@ -82,13 +83,13 @@
               <!-- 录音控制按钮 -->
               <div class="flex flex-col sm:flex-row items-center justify-center space-y-3 sm:space-y-0 sm:space-x-4">
                 <button v-if="!isRecording" @click="startRecording" :disabled="isProcessing"
-                  class="w-full sm:w-auto px-4 md:px-6 py-3 md:py-3 bg-[#F77F00] text-[#003049] rounded-lg hover:bg-[#F77F00]/90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 text-sm md:text-base min-h-[44px]">
+                  class="w-full sm:w-auto px-4 md:px-6 py-3 md:py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-lg hover:from-primary-600 hover:to-primary-700 transition-all duration-300 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 text-sm md:text-base min-h-[44px] shadow-heavy hover:shadow-xl transform hover:-translate-y-1">
                   <Mic class="w-4 h-4" />
                   <span>开始录音</span>
                 </button>
 
                 <button v-else @click="stopRecording"
-                  class="w-full sm:w-auto px-4 md:px-6 py-3 md:py-3 bg-[#D62828] text-white rounded-lg hover:bg-[#D62828]/90 transition-colors font-medium flex items-center justify-center space-x-2 text-sm md:text-base min-h-[44px]">
+                  class="w-full sm:w-auto px-4 md:px-6 py-3 md:py-3 bg-gradient-to-r from-error-500 to-error-600 text-white rounded-lg hover:from-error-600 hover:to-error-700 transition-all duration-300 font-medium flex items-center justify-center space-x-2 text-sm md:text-base min-h-[44px] shadow-heavy">
                   <Square class="w-4 h-4" />
                   <span>停止录音</span>
                 </button>
@@ -98,9 +99,9 @@
 
           <!-- 转录文本 -->
           <div v-if="transcribedText" class="mb-6 md:mb-8">
-            <h2 class="text-lg font-semibold text-[#EAE2B7] mb-3 md:mb-4">语音转录</h2>
-            <div class="bg-[#EAE2B7]/5 border border-[#EAE2B7]/20 rounded-lg p-4 md:p-6">
-              <div class="text-[#EAE2B7] leading-relaxed whitespace-pre-wrap text-sm md:text-base">
+            <h2 class="text-lg font-semibold text-gray-900 mb-3 md:mb-4">语音转录</h2>
+            <div class="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-xl p-4 md:p-6 shadow-light">
+              <div class="text-gray-600 leading-relaxed whitespace-pre-wrap text-sm md:text-base">
                 {{ transcribedText }}
               </div>
             </div>
@@ -108,17 +109,17 @@
 
           <!-- AI评估结果 -->
           <div v-if="evaluation" class="mb-6 md:mb-8">
-            <h2 class="text-lg font-semibold text-[#EAE2B7] mb-3 md:mb-4">AI评估报告</h2>
-            <div class="bg-[#003049] border border-[#EAE2B7]/20 rounded-lg p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-3 md:mb-4">AI评估报告</h2>
+            <div class="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-xl p-6 shadow-light">
               <!-- 综合评分 -->
               <div class="flex items-center justify-between mb-6">
-                <div class="text-3xl font-bold text-[#F77F00]">{{ evaluation.score }}分</div>
+                <div class="text-3xl font-bold bg-gradient-to-r from-primary-500 to-primary-600 bg-clip-text text-transparent">{{ evaluation.score }}分</div>
                 <div class="text-right">
-                  <div class="text-[#F77F00] font-bold text-lg">{{ getScoreLevel(evaluation.score) }}</div>
+                  <div class="text-primary-600 font-bold text-lg">{{ getScoreLevel(evaluation.score) }}</div>
                   <div class="flex items-center space-x-2 mt-2">
-                    <div class="w-32 h-2 bg-[#EAE2B7]/20 rounded-full overflow-hidden">
+                    <div class="w-32 h-3 bg-gray-200 rounded-full overflow-hidden shadow-inner">
                       <div
-                        class="h-full bg-gradient-to-r from-[#D62828] via-[#FCBF49] to-[#F77F00] transition-all duration-500"
+                        class="h-full bg-gradient-to-r from-error-500 via-warning-500 to-success-500 transition-all duration-500 rounded-full"
                         :style="{ width: `${evaluation.score}%` }"></div>
                     </div>
                   </div>
@@ -127,36 +128,36 @@
 
               <!-- 优点 -->
               <div v-if="evaluation.strengths && evaluation.strengths.length > 0" class="mb-4">
-                <h3 class="text-[#F77F00] font-medium mb-3 flex items-center">
+                <h3 class="text-success-600 font-medium mb-3 flex items-center">
                   <CheckCircle class="w-5 h-5 mr-2" />
                   优点亮点
                 </h3>
                 <div class="space-y-2">
                   <div v-for="(strength, index) in evaluation.strengths" :key="`strength-${index}`"
-                    class="bg-[#F77F00]/10 border-l-4 border-[#F77F00] rounded-r-lg p-3">
-                    <div class="text-[#F77F00] font-medium text-sm">{{ strength }}</div>
+                    class="bg-success-50 border border-success-200 border-l-4 border-l-success-500 rounded-lg p-3">
+                    <div class="text-success-700 font-medium text-sm">{{ strength }}</div>
                   </div>
                 </div>
               </div>
 
               <!-- 改进建议 -->
               <div v-if="evaluation.improvements && evaluation.improvements.length > 0" class="mb-4">
-                <h3 class="text-[#FCBF49] font-medium mb-3 flex items-center">
+                <h3 class="text-warning-600 font-medium mb-3 flex items-center">
                   <AlertTriangle class="w-5 h-5 mr-2" />
                   改进建议
                 </h3>
                 <div class="space-y-3">
                   <div v-for="(item, index) in evaluation.improvements" :key="`improvement-${index}`"
-                    class="bg-[#FCBF49]/10 border-l-4 border-[#FCBF49] rounded-r-lg p-3">
-                    <div class="text-[#EAE2B7]/80 text-sm">{{ item }}</div>
+                    class="bg-warning-50 border border-warning-200 border-l-4 border-l-warning-500 rounded-lg p-3">
+                    <div class="text-warning-700 text-sm">{{ item }}</div>
                   </div>
                 </div>
               </div>
 
               <!-- 总体反馈 -->
-              <div class="border-t border-[#EAE2B7]/20 pt-4">
-                <h3 class="text-[#EAE2B7] font-medium mb-2">总体评价</h3>
-                <p class="text-[#EAE2B7]/80 text-sm leading-relaxed">
+              <div class="border-t border-gray-200 pt-4">
+                <h3 class="text-gray-900 font-medium mb-2">总体评价</h3>
+                <p class="text-gray-600 text-sm leading-relaxed">
                   {{ evaluation.overall_feedback }}
                 </p>
               </div>
@@ -165,54 +166,53 @@
 
           <!-- 语音识别状态 -->
           <div v-if="!isSpeechRecognitionSupported" class="mb-4">
-            <div class="bg-[#D62828]/10 border border-[#D62828]/20 rounded-lg p-4">
+            <div class="bg-error-50 border border-error-200 rounded-lg p-4 shadow-light">
               <div class="flex items-center">
-                <AlertTriangle class="w-5 h-5 text-[#D62828] mr-2" />
+                <AlertTriangle class="w-5 h-5 text-error-500 mr-2" />
                 <div>
-                  <h3 class="text-[#D62828] font-medium">语音识别不可用</h3>
-                  <p class="text-[#D62828]/80 text-sm">{{ recognitionStatus }}</p>
+                  <h3 class="text-error-600 font-medium">语音识别不可用</h3>
+                  <p class="text-error-600 text-sm">{{ recognitionStatus }}</p>
                 </div>
               </div>
             </div>
           </div>
 
           <div v-else-if="recognitionStatus" class="mb-4">
-            <div class="bg-[#F77F00]/10 border border-[#F77F00]/20 rounded-lg p-3">
+            <div class="bg-success-50 border border-success-200 rounded-lg p-3 shadow-light">
               <div class="flex items-center">
-                <CheckCircle class="w-4 h-4 text-[#F77F00] mr-2" />
-                <span class="text-[#F77F00] text-sm">{{ recognitionStatus }}</span>
+                <CheckCircle class="w-4 h-4 text-success-500 mr-2" />
+                <span class="text-success-600 text-sm">{{ recognitionStatus }}</span>
               </div>
             </div>
           </div>
 
           <!-- 处理状态 -->
           <div v-if="isProcessing" class="text-center py-8">
-            <Loader2 class="w-8 h-8 text-[#F77F00] animate-spin mx-auto mb-4" />
-            <div class="text-[#EAE2B7]/65 mb-4">{{ processingStatus }}</div>
+            <Loader2 class="w-8 h-8 text-primary-500 animate-spin mx-auto mb-4" />
+            <div class="text-gray-500 mb-4">{{ processingStatus }}</div>
           </div>
         </div>
       </main>
 
       <!-- 历史记录侧边栏 -->
       <aside v-if="showHistory" :class="[
-        'border-l border-[#EAE2B7]/20 p-3 md:p-4 overflow-y-auto',
+        'bg-white/90 backdrop-blur-sm border-l border-gray-200 p-3 md:p-4 overflow-y-auto shadow-light',
         'md:w-80',
         'fixed md:relative inset-0 md:inset-auto z-50 md:z-auto',
-        'bg-[#003049] md:bg-transparent',
         'w-full md:w-80'
       ]">
         <div class="flex items-center justify-between mb-3 md:mb-4">
-          <h2 class="text-lg font-semibold text-[#EAE2B7]">历史记录</h2>
+          <h2 class="text-lg font-semibold text-gray-900">历史记录</h2>
           <div class="flex items-center space-x-2">
             <!-- 清除历史按钮 -->
             <button v-if="historyRecords.length > 0" @click="confirmClearHistory"
-              class="px-2 py-1 text-xs bg-transparent border border-[#D62828]/50 text-[#D62828] rounded-md hover:bg-[#D62828]/10 transition-colors"
+              class="px-3 py-1.5 text-xs bg-white border border-error-200 text-error-600 rounded-lg hover:bg-error-50 transition-colors shadow-light"
               title="清除所有历史记录">
               清除
             </button>
             <!-- 移动端关闭按钮 -->
             <button @click="showHistory = false"
-              class="md:hidden p-2 hover:bg-[#EAE2B7]/10 rounded-md transition-colors text-[#EAE2B7]/65">
+              class="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-600">
               <ArrowLeft class="w-5 h-5" />
             </button>
           </div>
@@ -220,25 +220,32 @@
         <div class="space-y-3">
           <!-- 历史记录列表 -->
           <div v-for="record in historyRecords" :key="record.id"
-            class="bg-[#EAE2B7]/5 border border-[#EAE2B7]/20 rounded-lg p-3 cursor-pointer hover:bg-[#EAE2B7]/10 transition-colors"
+            class="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-lg p-3 cursor-pointer hover:bg-primary-50 hover:border-primary-200 transition-all duration-200 hover:shadow-medium"
             @click="loadHistoryRecord(record)">
             <div class="flex items-center justify-between mb-2">
-              <span class="text-[#F77F00] font-medium text-sm md:text-base">{{ record.score }}分</span>
-              <span class="text-[#EAE2B7]/50 text-xs">{{ formatDate(record.created_at) }}</span>
+              <span class="text-primary-600 font-medium text-sm md:text-base">{{ record.score }}分</span>
+              <span class="text-gray-400 text-xs">{{ formatDate(record.created_at) }}</span>
             </div>
-            <p class="text-[#EAE2B7]/80 text-xs md:text-sm line-clamp-2">
+            <p class="text-gray-600 text-xs md:text-sm line-clamp-2">
               {{ record.paraphrased_text.substring(0, 50) }}...
             </p>
           </div>
 
           <!-- 空状态提示 -->
           <div v-if="historyRecords.length === 0" class="text-center py-8">
-            <div class="text-[#EAE2B7]/50 text-sm">暂无历史记录</div>
-            <div class="text-[#EAE2B7]/30 text-xs mt-1">完成复述训练后会显示在这里</div>
+            <div class="text-gray-500 text-sm">暂无历史记录</div>
+            <div class="text-gray-400 text-xs mt-1">完成复述训练后会显示在这里</div>
           </div>
         </div>
       </aside>
     </div>
+
+    <!-- 移动端遮罩层 -->
+    <div
+      v-if="showHistory"
+      @click="showHistory = false"
+      class="md:hidden fixed inset-0 bg-black/20 z-40 backdrop-blur-sm"
+    ></div>
   </div>
 </template>
 
@@ -594,4 +601,22 @@ onUnmounted(() => {
   }
 })
 </script>
-```json\s*\n?/i, '').replace(/\n?\s*
+
+<style scoped>
+/* 安全区域支持 */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* 文本截断 */
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+</style>
