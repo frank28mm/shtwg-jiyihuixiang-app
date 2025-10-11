@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently --kill-others-on-fail \"npm run client:dev\" \"npm run server:dev\"",
-    "client:dev": "vite --host 0.0.0.0 --port 5173",
+    "client:dev": "vite --host 0.0.0.0 --port 5000",
     "server:dev": "nodemon",
     "build": "vue-tsc -b && vite build",
     "preview": "vite preview",

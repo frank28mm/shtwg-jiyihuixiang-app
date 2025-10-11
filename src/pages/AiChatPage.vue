@@ -1,7 +1,7 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-50 flex flex-col">
+  <div class="min-h-screen bg-[#003049] flex flex-col">
     <!-- 顶部导航栏 -->
-    <header class="bg-white/80 backdrop-blur-sm border-b border-gray-200 p-4 shadow-light">
+    <header class="bg-[#003049]/95 backdrop-blur-sm border-b border-[#EAE2B7]/20 p-4">
       <div class="max-w-4xl mx-auto">
         <div class="flex items-center justify-between mb-2 md:mb-0">
           <div class="flex items-center space-x-3 md:space-x-4">
@@ -190,7 +190,7 @@
       </div>
 
       <!-- 输入区域 -->
-      <div class="border-t border-[#EAE2B7]/20 p-3 md:p-4">
+      <div class="border-t border-[#EAE2B7]/20 p-3 md:p-4 bg-[#003049]">
         <div class="max-w-4xl mx-auto">
           <form @submit.prevent="sendMessage" class="flex space-x-2 md:space-x-4">
             <div class="flex-1">

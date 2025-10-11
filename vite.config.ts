@@ -12,15 +12,6 @@ export default defineConfig({
   plugins: [
     vue(),
     Inspector(),
-    traeBadgePlugin({
-      variant: 'dark',
-      position: 'bottom-right',
-      prodOnly: true,
-      clickable: true,
-      clickUrl: 'https://www.trae.ai/solo?showJoin=1',
-      autoTheme: true,
-      autoThemeTarget: '#app',
-    }),
   ],
   resolve: {
     alias: {
@@ -29,14 +20,14 @@ export default defineConfig({
   },
   server: {
     host: '0.0.0.0',
-    port: 5173,
+    port: 5000,
     allowedHosts: [
       '.replit.dev',
       '.replit.co',
       'localhost'
     ],
     hmr: {
-      port: 5173,
+      port: 5000,
       host: '0.0.0.0'
     },
     watch: {
