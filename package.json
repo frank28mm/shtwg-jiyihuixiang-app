@@ -1,7 +1,7 @@
 {
-  "name": "shtwg-jiyihuixiang-app_2.0",
+  "name": "shanghai-planetarium-guide",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "concurrently --kill-others-on-fail \"npm run client:dev\" \"npm run server:dev\"",

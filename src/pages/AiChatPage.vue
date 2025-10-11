@@ -1,22 +1,22 @@
 <template>
-  <div class="min-h-screen bg-[#003049] flex flex-col">
+  <div class="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-50 flex flex-col">
     <!-- 顶部导航栏 -->
-    <header class="bg-[#003049]/95 backdrop-blur-sm border-b border-[#EAE2B7]/20 p-4">
+    <header class="bg-white/80 backdrop-blur-sm border-b border-gray-200 p-4 shadow-light">
       <div class="max-w-4xl mx-auto">
         <div class="flex items-center justify-between mb-2 md:mb-0">
           <div class="flex items-center space-x-3 md:space-x-4">
             <button
               @click="goBack"
-              class="text-[#EAE2B7]/65 hover:text-[#F77F00] transition-colors"
+              class="text-gray-600 hover:text-primary-600 transition-colors"
             >
               <ArrowLeft class="w-5 h-5" />
             </button>
             <div>
-              <h1 class="text-lg md:text-xl font-bold text-[#EAE2B7] flex items-center">
-                <Bot class="w-4 md:w-5 h-4 md:h-5 mr-2 text-[#F77F00]" />
+              <h1 class="text-lg md:text-xl font-bold text-gray-900 flex items-center">
+                <Bot class="w-4 md:w-5 h-4 md:h-5 mr-2 text-primary-600" />
                 天文馆AI讲解员
               </h1>
-              <p class="text-[#EAE2B7]/65 text-xs md:text-sm hidden md:block">{{ paragraph?.title }}</p>
+              <p class="text-gray-600 text-xs md:text-sm hidden md:block">{{ paragraph?.title }}</p>
             </div>
           </div>
 
@@ -24,35 +24,18 @@
           <button
             @click="clearChat"
             v-if="messages.length > 0"
-            class="md:hidden px-2 py-1 text-xs bg-transparent border border-[#EAE2B7]/30 text-[#EAE2B7]/65 rounded-md hover:bg-[#EAE2B7]/5 transition-colors"
+            class="md:hidden px-2 py-1 text-xs bg-transparent border border-gray-300 text-gray-600 rounded-md hover:bg-gray-100 transition-colors"
           >
             清空
           </button>
         </div>
 
-        <!-- 移动端第二行：模型选择器和桌面端清空按钮 -->
-        <div class="flex items-center justify-between md:justify-end space-x-3 md:space-x-4">
-          <div class="flex items-center space-x-2 flex-1 md:flex-none">
-            <label class="text-[#EAE2B7]/65 text-xs md:text-sm hidden md:inline">AI模型:</label>
-            <select
-              v-model="selectedModel"
-              class="px-2 md:px-3 py-1 bg-[#003049] border border-[#EAE2B7]/30 text-[#EAE2B7] text-xs md:text-sm rounded-md focus:outline-none focus:border-[#F77F00] transition-colors flex-1 md:flex-none"
-            >
-              <option
-                v-for="(config, modelKey) in SILICONFLOW_MODELS"
-                :key="modelKey"
-                :value="modelKey"
-              >
-                {{ config.name }}
-              </option>
-            </select>
-          </div>
-
-          <!-- 桌面端清空对话按钮 -->
+        <!-- 清空对话按钮 -->
+        <div class="flex items-center justify-end">
           <button
             @click="clearChat"
             v-if="messages.length > 0"
-            class="hidden md:block px-3 py-1 text-sm bg-transparent border border-[#EAE2B7]/30 text-[#EAE2B7]/65 rounded-md hover:bg-[#EAE2B7]/5 transition-colors"
+            class="px-3 py-1 text-sm bg-transparent border border-gray-300 text-gray-600 rounded-md hover:bg-gray-100 transition-colors"
           >
             清空对话
           </button>
@@ -66,16 +49,11 @@
         <div class="max-w-4xl mx-auto space-y-4">
           <!-- 欢迎消息 -->
           <div v-if="messages.length === 0" class="text-center py-12">
-            <div class="w-16 h-16 bg-[#F77F00]/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Bot class="w-8 h-8 text-[#F77F00]" />
+            <div class="w-16 h-16 bg-primary-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Bot class="w-8 h-8 text-primary-600" />
             </div>
-            <h2 class="text-xl font-bold text-[#EAE2B7] mb-2">天文馆AI讲解员为您服务</h2>
-            <p class="text-[#EAE2B7]/65 mb-2">我是您的专业天文讲解助手，可以为您详细解答天文相关问题，提供深入的知识讲解。</p>
-            <div class="flex items-center justify-center space-x-2 mb-4">
-              <span class="text-[#EAE2B7]/50 text-sm">当前使用模型:</span>
-              <span class="text-[#F77F00] text-sm font-medium">{{ SILICONFLOW_MODELS[selectedModel].name }}</span>
-              <span class="text-[#EAE2B7]/40 text-xs">{{ SILICONFLOW_MODELS[selectedModel].description }}</span>
-            </div>
+            <h2 class="text-xl font-bold text-gray-900 mb-2">天文馆AI讲解员为您服务</h2>
+            <p class="text-gray-600 mb-6">我是您的专业天文讲解助手，可以为您详细解答天文相关问题，提供深入的知识讲解。</p>
 
             <!-- API状态指示器 -->
              <div class="flex items-center justify-center space-x-4 mb-6">
@@ -88,7 +66,7 @@
                      'bg-yellow-500 animate-pulse': apiHealthy === null
                    }"
                  ></div>
-                 <span class="text-[#EAE2B7]/50 text-xs">
+                 <span class="text-gray-500 text-xs">
                    {{ apiHealthy === true ? 'AI服务正常' : apiHealthy === false ? 'AI服务异常' : '检查中...' }}
                  </span>
                </div>
@@ -98,7 +76,7 @@
                  v-if="apiHealthy === false"
                  @click="recheckApiHealth"
                  :disabled="isRecheckingApi"
-                 class="px-2 py-1 text-xs bg-[#F77F00]/20 border border-[#F77F00]/30 text-[#F77F00] rounded hover:bg-[#F77F00]/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1"
+                 class="px-2 py-1 text-xs bg-primary-50 border border-primary-200 text-primary-600 rounded hover:bg-primary-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1"
                >
                  <Loader2 v-if="isRecheckingApi" class="w-3 h-3 animate-spin" />
                  <span>{{ isRecheckingApi ? '检查中...' : '重新检查' }}</span>
@@ -111,7 +89,7 @@
                 v-for="suggestion in suggestions"
                 :key="suggestion"
                 @click="askSuggestion(suggestion)"
-                class="p-3 text-left bg-[#EAE2B7]/5 border border-[#EAE2B7]/20 rounded-lg text-[#EAE2B7]/80 hover:bg-[#EAE2B7]/10 hover:border-[#F77F00]/30 transition-colors"
+                class="p-3 text-left bg-white/80 border border-gray-200 rounded-lg text-gray-700 hover:bg-white hover:border-primary-300 transition-colors"
               >
                 {{ suggestion }}
               </button>
@@ -122,19 +100,19 @@
           <div v-for="(message, index) in messages" :key="index" class="flex" :class="message.role === 'user' ? 'justify-end' : 'justify-start'">
             <!-- AI消息 -->
             <div v-if="message.role === 'assistant'" class="flex items-start space-x-2 md:space-x-3 max-w-[85%] md:max-w-3xl">
-              <div class="w-6 md:w-8 h-6 md:h-8 bg-[#F77F00]/10 rounded-full flex items-center justify-center flex-shrink-0">
-                <Bot class="w-3 md:w-4 h-3 md:h-4 text-[#F77F00]" />
+              <div class="w-6 md:w-8 h-6 md:h-8 bg-primary-50 rounded-full flex items-center justify-center flex-shrink-0">
+                <Bot class="w-3 md:w-4 h-3 md:h-4 text-primary-600" />
               </div>
-              <div class="bg-[#EAE2B7]/5 border border-[#EAE2B7]/20 rounded-lg p-3 md:p-4">
-                <div class="text-[#EAE2B7] whitespace-pre-wrap leading-relaxed text-sm md:text-base">
+              <div class="bg-white/80 border border-gray-200 rounded-lg p-3 md:p-4 shadow-light">
+                <div class="text-gray-900 whitespace-pre-wrap leading-relaxed text-sm md:text-base">
                   {{ message.content }}
                 </div>
 
                 <!-- AI消息功能按键 -->
-                <div class="flex items-center space-x-2 mt-3 pt-2 border-t border-[#EAE2B7]/10">
+                <div class="flex items-center space-x-2 mt-3 pt-2 border-t border-gray-200">
                   <button
                     @click="copyMessage(message.content)"
-                    class="flex items-center space-x-1 px-2 py-1 text-xs text-[#EAE2B7]/60 hover:text-[#F77F00] hover:bg-[#F77F00]/5 rounded transition-colors"
+                    class="flex items-center space-x-1 px-2 py-1 text-xs text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
                     title="复制回答"
                   >
                     <Copy class="w-3 h-3" />
@@ -142,7 +120,7 @@
                   </button>
                   <button
                     @click="regenerateResponse(index)"
-                    class="flex items-center space-x-1 px-2 py-1 text-xs text-[#EAE2B7]/60 hover:text-[#F77F00] hover:bg-[#F77F00]/5 rounded transition-colors"
+                    class="flex items-center space-x-1 px-2 py-1 text-xs text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
                     title="重新生成"
                   >
                     <RotateCcw class="w-3 h-3" />
@@ -150,7 +128,7 @@
                   </button>
                 </div>
 
-                <div class="text-xs text-[#EAE2B7]/50 mt-2">
+                <div class="text-xs text-gray-500 mt-2">
                   {{ formatTime(message.timestamp) }}
                 </div>
               </div>
@@ -158,16 +136,16 @@
 
             <!-- 用户消息 -->
             <div v-else class="flex items-start space-x-2 md:space-x-3 max-w-[85%] md:max-w-3xl">
-              <div class="bg-[#F77F00]/10 border border-[#F77F00]/30 rounded-lg p-3 md:p-4">
-                <div class="text-[#EAE2B7] whitespace-pre-wrap text-sm md:text-base">
+              <div class="bg-primary-50 border border-primary-200 rounded-lg p-3 md:p-4">
+                <div class="text-gray-900 whitespace-pre-wrap text-sm md:text-base">
                   {{ message.content }}
                 </div>
-                <div class="text-xs text-[#EAE2B7]/50 mt-2 text-right">
+                <div class="text-xs text-gray-500 mt-2 text-right">
                   {{ formatTime(message.timestamp) }}
                 </div>
               </div>
-              <div class="w-6 md:w-8 h-6 md:h-8 bg-[#F77F00]/20 rounded-full flex items-center justify-center flex-shrink-0">
-                <User class="w-3 md:w-4 h-3 md:h-4 text-[#F77F00]" />
+              <div class="w-6 md:w-8 h-6 md:h-8 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <User class="w-3 md:w-4 h-3 md:h-4 text-primary-600" />
               </div>
             </div>
           </div>
@@ -175,11 +153,11 @@
           <!-- 加载状态 -->
           <div v-if="isLoading" class="flex justify-start">
             <div class="flex items-start space-x-2 md:space-x-3 max-w-[85%] md:max-w-3xl">
-              <div class="w-6 md:w-8 h-6 md:h-8 bg-[#F77F00]/10 rounded-full flex items-center justify-center flex-shrink-0">
-                <Bot class="w-3 md:w-4 h-3 md:h-4 text-[#F77F00]" />
+              <div class="w-6 md:w-8 h-6 md:h-8 bg-primary-50 rounded-full flex items-center justify-center flex-shrink-0">
+                <Bot class="w-3 md:w-4 h-3 md:h-4 text-primary-600" />
               </div>
-              <div class="bg-[#EAE2B7]/5 border border-[#EAE2B7]/20 rounded-lg p-3 md:p-4">
-                <div class="flex items-center space-x-2 text-[#EAE2B7]/65 text-sm md:text-base">
+              <div class="bg-white/80 border border-gray-200 rounded-lg p-3 md:p-4 shadow-light">
+                <div class="flex items-center space-x-2 text-gray-600 text-sm md:text-base">
                   <Loader2 class="w-4 h-4 animate-spin" />
                   <span>天文馆AI讲解员正在思考...</span>
                 </div>
@@ -190,7 +168,7 @@
       </div>
 
       <!-- 输入区域 -->
-      <div class="border-t border-[#EAE2B7]/20 p-3 md:p-4 bg-[#003049]">
+      <div class="border-t border-gray-200 p-3 md:p-4 bg-white/80 backdrop-blur-sm">
         <div class="max-w-4xl mx-auto">
           <form @submit.prevent="sendMessage" class="flex space-x-2 md:space-x-4">
             <div class="flex-1">
@@ -201,13 +179,13 @@
                 :disabled="isLoading"
                 placeholder="输入您的问题... (Enter发送，Shift+Enter换行)"
                 rows="2"
-                class="w-full px-3 md:px-4 py-2 md:py-3 bg-transparent border border-[#EAE2B7]/30 rounded-lg text-[#EAE2B7] placeholder-[#EAE2B7]/50 focus:outline-none focus:border-[#F77F00] focus:ring-1 focus:ring-[#F77F00] transition-colors resize-none disabled:opacity-50 text-sm md:text-base"
+                class="w-full px-3 md:px-4 py-2 md:py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-colors resize-none disabled:opacity-50 text-sm md:text-base"
               ></textarea>
             </div>
             <button
               type="submit"
               :disabled="!currentMessage.trim() || isLoading"
-              class="px-3 md:px-6 py-2 md:py-3 bg-[#F77F00] text-[#003049] rounded-lg hover:bg-[#F77F00]/90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1 md:space-x-2 text-sm md:text-base"
+              class="px-3 md:px-6 py-2 md:py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-lg hover:from-primary-600 hover:to-primary-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1 md:space-x-2 text-sm md:text-base shadow-medium"
             >
               <Send class="w-4 h-4" />
               <span class="hidden md:inline">发送</span>

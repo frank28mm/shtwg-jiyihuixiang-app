@@ -17,34 +17,17 @@
       'fixed inset-y-0 left-0 w-80 z-40',
       showMobileMenu ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
     ]">
-      <!-- 用户信息区域 -->
+      <!-- 顶部信息区域 -->
       <div class="p-4 border-b border-gray-200">
         <div class="flex items-center justify-between">
-          <div class="flex items-center space-x-3">
-            <div class="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center shadow-medium">
-              <User class="w-4 h-4 text-white" />
-            </div>
-            <div>
-              <p class="text-sm font-medium text-gray-900">{{ userEmail }}</p>
-              <p class="text-xs text-gray-500">讲解员</p>
-            </div>
-          </div>
-          <div class="flex items-center space-x-1">
-            <button
-              @click="goToWelcome"
-              class="p-2 hover:bg-gray-100 rounded-md transition-colors"
-              title="返回欢迎页"
-            >
-              <Home class="w-4 h-4 text-gray-500" />
-            </button>
-            <button
-              @click="handleSignOut"
-              class="p-2 hover:bg-gray-100 rounded-md transition-colors"
-              title="退出登录"
-            >
-              <LogOut class="w-4 h-4 text-gray-500" />
-            </button>
-          </div>
+          <h2 class="text-lg font-semibold text-gray-900">天文馆导览</h2>
+          <button
+            @click="goToWelcome"
+            class="p-2 hover:bg-gray-100 rounded-md transition-colors"
+            title="返回首页"
+          >
+            <Home class="w-4 h-4 text-gray-500" />
+          </button>
         </div>
       </div>
 
@@ -92,16 +75,6 @@
                     ]"
                   >
                     {{ paragraph.title }}
-                    <!-- 进度指示器 -->
-                    <div class="mt-2 flex items-center space-x-2">
-                      <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div
-                          class="h-full bg-gradient-to-r from-primary-500 to-primary-600 transition-all duration-500 rounded-full"
-                          :style="{ width: `${getProgress(paragraph.id)}%` }"
-                        ></div>
-                      </div>
-                      <span class="text-xs text-gray-400 font-medium">{{ getProgress(paragraph.id) }}%</span>
-                    </div>
                   </button>
                 </div>
               </div>
@@ -121,21 +94,17 @@
     <!-- 主内容区域 -->
     <div class="flex-1 flex flex-col relative md:ml-0" :class="{ 'ml-0': !showMobileMenu }">
       <!-- 内容展示区 -->
-      <div class="flex-1 overflow-y-auto p-4 md:p-8 mt-16 md:mt-0" :style="{ paddingBottom: selectedParagraph ? '140px' : '32px' }">
+      <div class="flex-1 overflow-y-auto p-4 md:p-8 mt-16 md:mt-0" :style="{ paddingBottom: selectedParagraph ? '100px' : '32px' }">
         <div v-if="selectedParagraph" class="max-w-4xl mx-auto">
           <!-- 标题和元信息 -->
           <div class="mb-8">
             <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
               {{ selectedParagraph.title }}
             </h1>
-            <div class="flex items-center space-x-6 text-sm text-gray-600">
+            <div class="flex items-center space-x-4 text-sm text-gray-600">
               <div class="flex items-center space-x-2">
                 <div class="w-2 h-2 bg-primary-500 rounded-full"></div>
-                <span>练习次数: {{ getPracticeCount(selectedParagraph.id) }}</span>
-              </div>
-              <div class="flex items-center space-x-2">
-                <div class="w-2 h-2 bg-success-500 rounded-full"></div>
-                <span>掌握度: {{ getProgress(selectedParagraph.id) }}%</span>
+                <span>{{ selectedParagraph.section }}</span>
               </div>
             </div>
           </div>
@@ -152,41 +121,22 @@
         <div v-else class="flex items-center justify-center h-full">
           <div class="text-center">
             <BookOpen class="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p class="text-gray-500 text-lg">请选择一个段落开始学习</p>
+            <p class="text-gray-500 text-lg">请选择一个展品开始了解</p>
           </div>
         </div>
       </div>
 
       <!-- 固定底部操作按钮 -->
       <div v-if="selectedParagraph" class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white/95 to-white/80 backdrop-blur-sm border-t border-gray-200 p-4 md:p-6 safe-area-bottom">
-        <div class="max-w-4xl mx-auto">
-          <div class="flex flex-col md:flex-row items-center justify-center space-y-3 md:space-y-0 md:space-x-4">
-            <!-- 天文馆AI讲解员按钮 -->
-            <button
-              @click="openAiChat"
-              class="w-full md:w-auto px-6 py-3 bg-white border border-primary-200 text-primary-600 rounded-lg hover:bg-primary-50 transition-all duration-200 font-medium text-sm md:text-base flex items-center justify-center gap-2 shadow-light hover:shadow-medium"
-            >
-              <MessageCircle class="w-4 h-4 md:w-5 md:h-5" />
-              天文馆AI讲解员
-            </button>
-
-            <!-- 开始填空训练按钮 -->
-            <button
-              @click="startFillBlankTraining"
-              class="w-full md:w-auto px-6 py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-lg font-semibold hover:from-primary-600 hover:to-primary-700 transition-all duration-300 shadow-heavy hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center gap-2 text-sm md:text-base"
-            >
-              开始填空训练
-            </button>
-
-            <!-- 复述训练功能 -->
-            <button
-              @click="startParaphraseTraining"
-              class="w-full md:w-auto px-6 py-3 bg-white border border-primary-200 text-primary-600 rounded-lg hover:bg-primary-50 transition-all duration-200 font-medium text-sm md:text-base flex items-center justify-center gap-2 shadow-light hover:shadow-medium"
-            >
-              <Mic class="w-4 h-4" />
-              复述训练
-            </button>
-          </div>
+        <div class="max-w-4xl mx-auto flex justify-center">
+          <!-- 天文馆AI讲解员按钮 -->
+          <button
+            @click="openAiChat"
+            class="w-full md:w-auto px-8 py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-lg font-semibold hover:from-primary-600 hover:to-primary-700 transition-all duration-300 shadow-heavy hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center gap-2 text-sm md:text-base"
+          >
+            <MessageCircle class="w-4 h-4 md:w-5 md:h-5" />
+            向AI讲解员提问
+          </button>
         </div>
       </div>
     </div>
@@ -194,18 +144,27 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import {
-  User, LogOut, ChevronDown, BookOpen, MessageCircle, Menu, X, Home, Mic
+  ChevronDown, BookOpen, MessageCircle, Menu, X, Home
 } from 'lucide-vue-next'
-import { useAuthStore } from '@/stores/auth'
-import { supabase } from '@/lib/supabase'
-import type { Paragraph } from '@/lib/supabase'
 import { TouchGestureHandler, preventDoubleClickZoom, addSafeAreaSupport, isMobileDevice } from '@/utils/touch'
 
 const router = useRouter()
-const authStore = useAuthStore()
+
+// 定义本地段落数据类型
+interface Paragraph {
+  id: string
+  section: string
+  module: string
+  title: string
+  content: string
+  keywords: string[]
+  fill_blanks: string
+  fill_blanks_answers: string[]
+  voice_check_phrases: string
+}
 
 // 响应式数据
 const sections = ref<Array<{
@@ -218,13 +177,7 @@ const sections = ref<Array<{
   }>;
 }>>([])
 const selectedParagraph = ref<Paragraph | null>(null)
-const userProgress = ref<Record<string, { mastery_level: number; practice_count: number }>>({})
 const showMobileMenu = ref(false)
-
-// 计算属性
-const userEmail = computed(() => {
-  return authStore.user?.email || '未知用户'
-})
 
 // 方法
 const toggleSection = (section: any) => {
@@ -239,35 +192,10 @@ const selectParagraph = (paragraph: Paragraph) => {
   selectedParagraph.value = paragraph
 }
 
-const getProgress = (paragraphId: string): number => {
-  return userProgress.value[paragraphId]?.mastery_level || 0
-}
-
-const getPracticeCount = (paragraphId: string): number => {
-  return userProgress.value[paragraphId]?.practice_count || 0
-}
-
-const startFillBlankTraining = () => {
-  if (selectedParagraph.value) {
-    router.push(`/training/${selectedParagraph.value.id}`)
-  }
-}
-
-const startParaphraseTraining = () => {
-  if (selectedParagraph.value) {
-    router.push(`/paraphrase/${selectedParagraph.value.id}`)
-  }
-}
-
 const openAiChat = () => {
   if (selectedParagraph.value) {
     router.push(`/ai-chat/${selectedParagraph.value.id}`)
   }
-}
-
-const handleSignOut = async () => {
-  await authStore.signOut()
-  router.push('/login')
 }
 
 const goToWelcome = () => {
@@ -284,13 +212,9 @@ let touchHandler: TouchGestureHandler | null = null
 // 初始化移动端优化
 const initMobileOptimizations = () => {
   if (isMobileDevice()) {
-    // 添加安全区域支持
     addSafeAreaSupport()
-
-    // 防止双击缩放
     preventDoubleClickZoom(document.body)
 
-    // 添加触摸手势支持
     touchHandler = new TouchGestureHandler(document.body, {
       threshold: 80,
       onSwipeRight: () => {
@@ -307,69 +231,11 @@ const initMobileOptimizations = () => {
   }
 }
 
-// 加载数据
+// 从本地JSON文件加载数据
 const loadParagraphs = async () => {
   try {
     console.log('开始加载段落数据...')
 
-    // 优先从Supabase加载数据
-    const { data: supabaseData, error: supabaseError } = await supabase
-      .from('paragraphs')
-      .select('*')
-      .order('section', { ascending: true })
-      .order('order_index', { ascending: true })
-
-    if (supabaseData && supabaseData.length > 0 && !supabaseError) {
-      console.log(`从Supabase加载了${supabaseData.length}个段落`)
-
-      // 按展区和模块分组
-      const groupedData = supabaseData.reduce((acc: Record<string, Record<string, any[]>>, paragraph: any) => {
-        const section = paragraph.section || '默认展区'
-        const module = '默认模块' // Supabase数据可能没有module字段
-
-        if (!acc[section]) {
-          acc[section] = {}
-        }
-        if (!acc[section][module]) {
-          acc[section][module] = []
-        }
-
-        acc[section][module].push({
-          id: paragraph.custom_id || paragraph.id,
-          title: paragraph.title,
-          content: paragraph.content,
-          section: paragraph.section,
-          order_index: paragraph.order_index,
-          fill_blanks: paragraph.fill_blanks || [],
-          potential_qa: paragraph.potential_qa || [],
-          created_at: new Date().toISOString()
-        })
-        return acc
-      }, {})
-
-      // 转换为sections格式
-      sections.value = Object.entries(groupedData).map(([sectionName, modules]) => ({
-        name: sectionName,
-        expanded: true,
-        modules: Object.entries(modules).map(([moduleName, paragraphs]) => ({
-          name: moduleName,
-          expanded: true,
-          paragraphs
-        }))
-      }))
-
-      // 默认选择第一个段落
-      if (sections.value.length > 0 && sections.value[0].modules.length > 0 && sections.value[0].modules[0].paragraphs.length > 0) {
-        selectedParagraph.value = sections.value[0].modules[0].paragraphs[0]
-      }
-
-      console.log('从Supabase成功加载数据')
-      return
-    }
-
-    console.log('Supabase数据为空，尝试加载本地文件...')
-
-    // 备用方案：从本地JSON文件加载数据
     let paragraphsData = []
     let markdownContent = ''
 
@@ -382,16 +248,17 @@ const loadParagraphs = async () => {
       console.log(`从JSON文件加载了${paragraphsData.length}个段落`)
     } catch (jsonError) {
       console.warn('加载JSON文件失败:', jsonError)
-      // 提供最基本的默认数据
       paragraphsData = [{
         id: 'fallback-1',
         title: '加载中...',
-        content: '正在从数据库获取内容，请稍候。',
-        section: '...',
+        content: '正在加载内容，请稍候。',
+        section: '默认展区',
+        module: '默认模块',
         order_index: 1,
-        fill_blanks: [],
-        potential_qa: [],
-        created_at: new Date().toISOString()
+        keywords: [],
+        fill_blanks: '',
+        fill_blanks_answers: [],
+        voice_check_phrases: ''
       }]
     }
 
@@ -405,10 +272,10 @@ const loadParagraphs = async () => {
       console.warn('加载Markdown文件失败:', markdownError)
     }
 
-    // 解析Markdown内容，创建段落映射
+    // 解析Markdown内容
     const markdownSections = markdownContent ? parseMarkdownContent(markdownContent) : {}
 
-    // 按展区和模块分组并合并原文内容
+    // 按展区和模块分组
     const groupedData = paragraphsData.reduce((acc: Record<string, Record<string, any[]>>, paragraph: any) => {
       const section = paragraph.section || '默认展区'
       const module = paragraph.module || '默认模块'
@@ -420,12 +287,11 @@ const loadParagraphs = async () => {
         acc[section][module] = []
       }
 
-      // 查找对应的原文内容
       const originalContent = findOriginalContent(markdownSections, paragraph.section, paragraph.title)
 
       acc[section][module].push({
         ...paragraph,
-        content: originalContent || paragraph.content // 优先使用原文，否则使用JSON中的内容
+        content: originalContent || paragraph.content
       })
       return acc
     }, {})
@@ -450,7 +316,6 @@ const loadParagraphs = async () => {
 
   } catch (error) {
     console.error('加载段落数据失败:', error)
-    // 提供最基本的默认数据
     sections.value = [{
       name: '默认展区',
       expanded: true,
@@ -460,12 +325,14 @@ const loadParagraphs = async () => {
         paragraphs: [{
           id: 'fallback-1',
           title: '加载中...',
-          content: '正在从数据库获取内容，请稍候。',
-          section: '...',
+          content: '正在加载内容，请稍候。',
+          section: '默认展区',
+          module: '默认模块',
           order_index: 1,
-          fill_blanks: [],
-          potential_qa: [],
-          created_at: new Date().toISOString()
+          keywords: [],
+          fill_blanks: '',
+          fill_blanks_answers: [],
+          voice_check_phrases: ''
         }]
       }]
     }]
@@ -473,30 +340,6 @@ const loadParagraphs = async () => {
     if (sections.value[0].modules[0].paragraphs[0]) {
       selectedParagraph.value = sections.value[0].modules[0].paragraphs[0]
     }
-  }
-}
-
-const loadUserProgress = async () => {
-  if (!authStore.user) return
-
-  try {
-    const { data: progress, error } = await supabase
-      .from('user_progress')
-      .select('paragraph_id, mastery_level, practice_count')
-      .eq('user_id', authStore.user.id)
-
-    if (error) throw error
-
-    // 转换为字典格式
-    userProgress.value = progress?.reduce((acc, item) => {
-      acc[item.paragraph_id] = {
-        mastery_level: item.mastery_level,
-        practice_count: item.practice_count
-      }
-      return acc
-    }, {} as Record<string, { mastery_level: number; practice_count: number }>) || {}
-  } catch (error) {
-    console.error('加载用户进度失败:', error)
   }
 }
 
@@ -516,9 +359,7 @@ const parseMarkdownContent = (content: string) => {
       continue
     }
 
-    // 检查是否是主标题（展区）
     if (line.match(/^[^#\s].*展区$/) || line === '上海天文馆简介') {
-      // 保存之前的内容
       if (currentSection && currentSubtitle && currentContent.trim()) {
         if (!sections[currentSection]) sections[currentSection] = {}
         sections[currentSection][currentSubtitle] = currentContent.trim()
@@ -528,9 +369,7 @@ const parseMarkdownContent = (content: string) => {
       currentSubtitle = ''
       currentContent = ''
     }
-    // 检查是否是子标题
     else if (line.match(/^[^\s]/) && !line.includes('：') && currentSection) {
-      // 保存之前的内容
       if (currentSubtitle && currentContent.trim()) {
         if (!sections[currentSection]) sections[currentSection] = {}
         sections[currentSection][currentSubtitle] = currentContent.trim()
@@ -539,13 +378,11 @@ const parseMarkdownContent = (content: string) => {
       currentSubtitle = line.trim()
       currentContent = ''
     }
-    // 内容行
     else if (currentSection) {
       currentContent += line + '\n'
     }
   }
 
-  // 保存最后一段内容
   if (currentSection && currentSubtitle && currentContent.trim()) {
     if (!sections[currentSection]) sections[currentSection] = {}
     sections[currentSection][currentSubtitle] = currentContent.trim()
@@ -558,12 +395,10 @@ const parseMarkdownContent = (content: string) => {
 const findOriginalContent = (markdownSections: Record<string, Record<string, string>>, section: string, title: string) => {
   if (!markdownSections[section]) return null
 
-  // 尝试直接匹配标题
   if (markdownSections[section][title]) {
     return markdownSections[section][title]
   }
 
-  // 尝试模糊匹配
   for (const [key, content] of Object.entries(markdownSections[section])) {
     if (key.includes(title) || title.includes(key)) {
       return content
@@ -576,7 +411,6 @@ const findOriginalContent = (markdownSections: Record<string, Record<string, str
 // 组件挂载
 onMounted(async () => {
   await loadParagraphs()
-  await loadUserProgress()
   initMobileOptimizations()
 })
 

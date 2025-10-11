@@ -21,40 +21,25 @@
           欢迎来到
         </h1>
         <h2 class="text-3xl md:text-5xl font-bold bg-gradient-to-r from-primary-500 to-primary-600 bg-clip-text text-transparent mb-6">
-          记忆回响
+          上海天文馆智能导览
         </h2>
         <p class="text-xl md:text-2xl text-gray-600 mb-8">
-          讲解员个人记忆辅助工具
+          您的专属天文馆智能导游
         </p>
       </div>
 
-      <!-- 用户信息卡片 -->
+      <!-- 功能介绍卡片 -->
       <div class="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-2xl p-8 mb-12 shadow-light">
-        <div class="flex items-center justify-center mb-6">
-          <div class="w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center mr-4 shadow-medium">
-            <User class="w-8 h-8 text-white" />
-          </div>
-          <div class="text-left">
-            <h3 class="text-2xl font-semibold text-gray-900 mb-1">欢迎回来！</h3>
-            <p class="text-gray-600">{{ userEmail }}</p>
-          </div>
-        </div>
-        
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div class="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-lg p-6 hover:shadow-medium transition-all duration-300 transform hover:-translate-y-1">
             <BookOpen class="w-8 h-8 text-primary-500 mx-auto mb-3" />
-            <h4 class="text-lg font-semibold text-gray-900 mb-2">学习内容</h4>
-            <p class="text-gray-600 text-sm">上海天文馆讲解内容</p>
-          </div>
-          <div class="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-lg p-6 hover:shadow-medium transition-all duration-300 transform hover:-translate-y-1">
-            <Brain class="w-8 h-8 text-primary-500 mx-auto mb-3" />
-            <h4 class="text-lg font-semibold text-gray-900 mb-2">记忆训练</h4>
-            <p class="text-gray-600 text-sm">填空练习与复述训练</p>
+            <h4 class="text-lg font-semibold text-gray-900 mb-2">展品讲解</h4>
+            <p class="text-gray-600 text-sm">浏览上海天文馆各展区的详细介绍</p>
           </div>
           <div class="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-lg p-6 hover:shadow-medium transition-all duration-300 transform hover:-translate-y-1">
             <MessageCircle class="w-8 h-8 text-primary-500 mx-auto mb-3" />
-            <h4 class="text-lg font-semibold text-gray-900 mb-2">AI助手</h4>
-            <p class="text-gray-600 text-sm">智能讲解员助手</p>
+            <h4 class="text-lg font-semibold text-gray-900 mb-2">AI智能问答</h4>
+            <p class="text-gray-600 text-sm">随时向AI讲解员提问，获取详细解答</p>
           </div>
         </div>
       </div>
@@ -66,11 +51,11 @@
           class="px-12 py-4 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-xl font-bold text-xl hover:from-primary-600 hover:to-primary-700 transition-all duration-300 shadow-heavy hover:shadow-xl transform hover:-translate-y-2 flex items-center justify-center gap-3"
         >
           <Rocket class="w-6 h-6" />
-          开始学习之旅
+          开始探索天文馆
         </button>
         
         <p class="text-gray-500 text-sm">
-          点击开始，进入学习模式
+          点击开始，探索宇宙的奥秘
         </p>
       </div>
 
@@ -85,20 +70,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { 
-  Telescope, User, BookOpen, Brain, MessageCircle, Rocket, Star
+  Telescope, BookOpen, MessageCircle, Rocket, Star
 } from 'lucide-vue-next'
-import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
-const authStore = useAuthStore()
-
-// 计算属性
-const userEmail = computed(() => {
-  return authStore.user?.email || '未知用户'
-})
 
 // 方法
 const startLearning = () => {
