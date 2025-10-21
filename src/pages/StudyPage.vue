@@ -254,8 +254,7 @@ const loadParagraphs = async () => {
         content: '正在加载内容，请稍候。',
         section: '默认展区',
         module: '默认模块',
-        order_index: 1,
-        keywords: [],
+                keywords: [],
         fill_blanks: '',
         fill_blanks_answers: [],
         voice_check_phrases: ''
@@ -328,8 +327,7 @@ const loadParagraphs = async () => {
           content: '正在加载内容，请稍候。',
           section: '默认展区',
           module: '默认模块',
-          order_index: 1,
-          keywords: [],
+                    keywords: [],
           fill_blanks: '',
           fill_blanks_answers: [],
           voice_check_phrases: ''
