@@ -43,6 +43,7 @@
       </div>
     </header>
 
+    
     <!-- 聊天区域 -->
     <main class="flex-1 flex flex-col">
       <div class="flex-1 overflow-y-auto p-4">
@@ -58,7 +59,7 @@
             <!-- API状态指示器 -->
              <div class="flex items-center justify-center space-x-4 mb-6">
                <div class="flex items-center space-x-1">
-                 <div 
+                 <div
                    class="w-2 h-2 rounded-full transition-colors"
                    :class="{
                      'bg-green-500': apiHealthy === true,
@@ -71,16 +72,28 @@
                  </span>
                </div>
 
-               <!-- 重新检查按钮 -->
-               <button
-                 v-if="apiHealthy === false"
-                 @click="recheckApiHealth"
-                 :disabled="isRecheckingApi"
-                 class="px-2 py-1 text-xs bg-primary-50 border border-primary-200 text-primary-600 rounded hover:bg-primary-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1"
-               >
-                 <Loader2 v-if="isRecheckingApi" class="w-3 h-3 animate-spin" />
-                 <span>{{ isRecheckingApi ? '检查中...' : '重新检查' }}</span>
-               </button>
+               <!-- 操作按钮 -->
+               <div class="flex items-center space-x-2">
+                 <!-- 重新检查按钮 -->
+                 <button
+                   v-if="apiHealthy === false"
+                   @click="recheckApiHealth"
+                   :disabled="isRecheckingApi"
+                   class="px-2 py-1 text-xs bg-primary-50 border border-primary-200 text-primary-600 rounded hover:bg-primary-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1"
+                 >
+                   <Loader2 v-if="isRecheckingApi" class="w-3 h-3 animate-spin" />
+                   <span>{{ isRecheckingApi ? '检查中...' : '重新检查' }}</span>
+                 </button>
+
+                 <!-- 测试流式API按钮 -->
+                 <button
+                   @click="testStreamAPI"
+                   class="px-2 py-1 text-xs bg-blue-50 border border-blue-200 text-blue-600 rounded hover:bg-blue-100 transition-colors flex items-center space-x-1"
+                 >
+                   <Bot class="w-3 h-3" />
+                   <span>测试API</span>
+                 </button>
+               </div>
              </div>
 
             <!-- 建议问题 -->
@@ -151,7 +164,7 @@
           </div>
 
           <!-- 加载状态 -->
-          <div v-if="isLoading" class="flex justify-start">
+          <div v-if="isLoading && messages.length === 0" class="flex justify-start">
             <div class="flex items-start space-x-2 md:space-x-3 max-w-[85%] md:max-w-3xl">
               <div class="w-6 md:w-8 h-6 md:h-8 bg-primary-50 rounded-full flex items-center justify-center flex-shrink-0">
                 <Bot class="w-3 md:w-4 h-3 md:h-4 text-primary-600" />
@@ -200,7 +213,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { 
+import {
   ArrowLeft, Bot, User, Send, Loader2, Copy, RotateCcw
 } from 'lucide-vue-next'
 import { onViewportChange, getViewportHeight, isMobileDevice, preventDoubleClickZoom } from '@/utils/touch'
@@ -220,13 +233,14 @@ interface Paragraph {
   fill_blanks_answers: string[]
   voice_check_phrases: string
 }
-import { 
-  callSiliconFlowAPI, 
-  getAstronomyGuidePrompt, 
+import {
+  callSiliconFlowAPI,
+  callSiliconFlowAPIStream,
+  getAstronomyGuidePrompt,
   getDefaultModel,
   SILICONFLOW_MODELS,
   getFallbackResponse,
-  type SiliconFlowModel 
+  type SiliconFlowModel
 } from '@/utils/siliconflow'
 
 interface Message {
@@ -331,28 +345,52 @@ const regenerateResponse = async (messageIndex: number) => {
   isLoading.value = true
 
   try {
-    console.log('🤖 [DEBUG] Regenerating AI response for:', userMessage)
+    console.log('🤖 [DEBUG] Regenerating AI Stream response for:', userMessage)
 
     if (!paragraph.value) {
       throw new Error('段落数据不可用')
     }
 
-    // 调用AI API
-    const response = await callAiApi(userMessage, paragraph.value)
+    // 首先添加一个空的AI消息用于流式更新
+    const aiMessageIndex = messages.value.length
+    messages.value.push({
+      role: 'assistant',
+      content: '',
+      timestamp: new Date()
+    })
 
-    console.log('✅ [DEBUG] Regenerated AI response received:', {
+    console.log('📝 [DEBUG] Empty AI message added for streaming regeneration at index:', aiMessageIndex)
+
+    // 定义流式更新回调函数
+    const onStreamChunk = (chunk: string) => {
+      // 更新最后一条AI消息的内容
+      if (messages.value[aiMessageIndex]) {
+        messages.value[aiMessageIndex].content += chunk
+
+        // 自动滚动到底部
+        nextTick(() => {
+          const chatContainer = document.querySelector('.overflow-y-auto')
+          if (chatContainer) {
+            chatContainer.scrollTop = chatContainer.scrollHeight
+          }
+        })
+      }
+    }
+
+    // 调用流式AI API
+    const response = await callAiApiStream(userMessage, paragraph.value, onStreamChunk)
+
+    console.log('✅ [DEBUG] Regenerated AI Stream response received:', {
       responseLength: response?.length || 0,
       responsePreview: response?.substring(0, 100) + '...'
     })
 
-    // 添加新的AI响应
-    messages.value.push({
-      role: 'assistant',
-      content: response,
-      timestamp: new Date()
-    })
+    // 确保最终内容完整
+    if (messages.value[aiMessageIndex]) {
+      messages.value[aiMessageIndex].content = response
+    }
 
-    console.log('📝 [DEBUG] Regenerated AI response added, total messages:', messages.value.length)
+    console.log('📝 [DEBUG] Regenerated AI streaming response completed, total messages:', messages.value.length)
   } catch (error) {
     console.error('❌ [ERROR] Failed to regenerate response:', error)
 
@@ -416,28 +454,52 @@ const sendMessage = async () => {
   isLoading.value = true
 
   try {
-    console.log('🤖 [DEBUG] Calling AI API with:', {
+    console.log('🤖 [DEBUG] Calling AI Stream API with:', {
       message,
       paragraphTitle: paragraph.value.title,
       selectedModel: selectedModel.value
     })
 
-    // 调用AI API
-    const response = await callAiApi(message, paragraph.value)
+    // 首先添加一个空的AI消息用于流式更新
+    const aiMessageIndex = messages.value.length
+    messages.value.push({
+      role: 'assistant',
+      content: '',
+      timestamp: new Date()
+    })
 
-    console.log('✅ [DEBUG] AI API response received:', {
+    console.log('📝 [DEBUG] Empty AI message added for streaming at index:', aiMessageIndex)
+
+    // 定义流式更新回调函数
+    const onStreamChunk = (chunk: string) => {
+      // 更新最后一条AI消息的内容
+      if (messages.value[aiMessageIndex]) {
+        messages.value[aiMessageIndex].content += chunk
+
+        // 自动滚动到底部
+        nextTick(() => {
+          const chatContainer = document.querySelector('.overflow-y-auto')
+          if (chatContainer) {
+            chatContainer.scrollTop = chatContainer.scrollHeight
+          }
+        })
+      }
+    }
+
+    // 调用流式AI API
+    const response = await callAiApiStream(message, paragraph.value, onStreamChunk)
+
+    console.log('✅ [DEBUG] AI Stream API response received:', {
       responseLength: response?.length || 0,
       responsePreview: response?.substring(0, 100) + '...'
     })
 
-    // 添加AI响应
-    messages.value.push({
-      role: 'assistant',
-      content: response,
-      timestamp: new Date()
-    })
+    // 确保最终内容完整
+    if (messages.value[aiMessageIndex]) {
+      messages.value[aiMessageIndex].content = response
+    }
 
-    console.log('📝 [DEBUG] AI response added, total messages:', messages.value.length)
+    console.log('📝 [DEBUG] AI streaming response completed, total messages:', messages.value.length)
   } catch (error) {
     console.error('❌ [ERROR] AI响应失败:', error)
     console.error('❌ [ERROR] Error details:', {
@@ -499,6 +561,105 @@ const sendMessage = async () => {
       chatContainer.scrollTop = chatContainer.scrollHeight
       console.log('📜 [DEBUG] Scrolled to bottom')
     }
+  }
+}
+
+// 调用硅基流动AI API（流式响应，带重试机制）
+const callAiApiStream = async (query: string, paragraph: Paragraph, onChunk?: (chunk: string) => void, retryCount = 0): Promise<string> => {
+  console.log('🔧 [DEBUG] callAiApiStream started with:', {
+    queryLength: query.length,
+    paragraphId: paragraph.id,
+    paragraphTitle: paragraph.title,
+    selectedModel: selectedModel.value
+  })
+
+  try {
+    // 构建对话历史（排除当前问题）
+    const conversationHistory = messages.value
+      .slice(0, -1) // 排除刚添加的用户消息
+      .map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }))
+
+    console.log('📚 [DEBUG] Conversation history:', {
+      historyLength: conversationHistory.length,
+      history: conversationHistory.map(msg => ({ role: msg.role, contentLength: msg.content.length }))
+    })
+
+    // 构建完整的消息列表
+    const systemPrompt = getAstronomyGuidePrompt(`标题：${paragraph.title}\n\n内容：${paragraph.content}`)
+    const fullMessages = [
+      { role: 'system', content: systemPrompt },
+      ...conversationHistory,
+      { role: 'user', content: query }
+    ]
+
+    console.log('📋 [DEBUG] Full messages for API:', {
+      totalMessages: fullMessages.length,
+      systemPromptLength: systemPrompt.length,
+      messages: fullMessages.map(msg => ({ role: msg.role, contentLength: msg.content.length }))
+    })
+
+    // 检查网络连接
+    if (!navigator.onLine) {
+      throw new Error('网络连接不可用，请检查网络连接')
+    }
+
+    console.log('🌐 [DEBUG] Network status: online, calling SiliconFlow Stream API...')
+
+    // 添加详细的请求前检查
+    console.log('🔍 [DEBUG] Pre-stream request check:', {
+      hasApiKey: !!import.meta.env.VITE_SILICONFLOW_API_KEY,
+      apiKeyPrefix: import.meta.env.VITE_SILICONFLOW_API_KEY?.substring(0, 10) + '...',
+      baseUrl: import.meta.env.VITE_SILICONFLOW_BASE_URL,
+      selectedModel: selectedModel.value,
+      messagesCount: fullMessages.length
+    })
+
+    // 调用流式硅基流动API
+    const response = await callSiliconFlowAPIStream(fullMessages, selectedModel.value, onChunk)
+
+    console.log('✅ [DEBUG] SiliconFlow Stream API call successful:', {
+      responseType: typeof response,
+      responseLength: response?.length || 0,
+      responseStart: response?.substring(0, 50) + '...'
+    })
+
+    if (!response || typeof response !== 'string') {
+      throw new Error('API返回了无效的响应格式')
+    }
+
+    return response
+  } catch (error) {
+    console.error('❌ [ERROR] 硅基流动流式API调用失败:', error)
+    console.error('❌ [ERROR] Error type:', typeof error)
+    console.error('❌ [ERROR] Error constructor:', error?.constructor?.name)
+
+    // 优化重试机制 - 支持超时和网络错误重试，最多重试2次
+    if (retryCount < 2 && (
+      error?.message?.includes('fetch') ||
+      error?.message?.includes('网络') ||
+      error?.message?.includes('timeout') ||
+      error?.message?.includes('超时') ||
+      error?.name === 'TypeError' || // 网络错误通常是TypeError
+      error?.name === 'AbortError' // 请求被中止
+    )) {
+      console.log(`🔄 [DEBUG] Retrying Stream API call (attempt ${retryCount + 1}/2) due to error:`, error?.message)
+
+      // 根据重试次数增加等待时间：第1次重试等待2秒，第2次重试等待5秒
+      const waitTime = retryCount === 0 ? 2000 : 5000
+      await new Promise(resolve => setTimeout(resolve, waitTime))
+
+      return callAiApiStream(query, paragraph, onChunk, retryCount + 1)
+    }
+
+    // 如果重试失败或不符合重试条件，使用备用回复机制
+    console.log('🔄 [DEBUG] All stream retries failed, using fallback response')
+    const fallbackResponse = getFallbackResponse(query)
+    console.log('✅ [DEBUG] Fallback response generated:', fallbackResponse.substring(0, 100) + '...')
+
+    return fallbackResponse
   }
 }
 
@@ -648,86 +809,41 @@ const loadParagraph = async () => {
   }
 }
 
-// API健康检查
+// API健康检查（简化版）
 const checkApiHealth = async () => {
   try {
     console.log('🏥 [DEBUG] Checking API health...')
 
-    // 首先检查网络连接
-    if (!navigator.onLine) {
-      console.warn('⚠️ [WARNING] Device is offline')
-      apiHealthy.value = false
-      return false
-    }
-
+    // 直接测试简单的API调用
     const testMessages = [
-      { role: 'user', content: 'ping' }
+      { role: 'user', content: 'hi' }
     ]
 
-    // 添加超时控制
+    // 简化测试，只用5秒超时
     const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('API健康检查超时')), 10000) // 10秒超时
+      setTimeout(() => reject(new Error('timeout')), 5000)
     })
 
     const apiPromise = callSiliconFlowAPI(testMessages, selectedModel.value)
     const response = await Promise.race([apiPromise, timeoutPromise])
 
-    console.log('✅ [DEBUG] API health check passed')
-    apiHealthy.value = true
-    return true
-  } catch (error) {
-    console.warn('⚠️ [WARNING] API health check failed:', error)
-
-    // 根据错误类型设置不同的健康状态
-    if (error?.name === 'NetworkError' || error?.message?.includes('网络')) {
-      console.warn('🌐 [WARNING] Network-related API health check failure')
-    } else if (error?.message?.includes('超时')) {
-      console.warn('⏰ [WARNING] Timeout-related API health check failure')
+    if (response && response.length > 0) {
+      console.log('✅ [DEBUG] API health check passed')
+      apiHealthy.value = true
+      return true
     } else {
-      console.warn('❓ [WARNING] Unknown API health check failure')
+      throw new Error('Empty response')
     }
-
+  } catch (error) {
+    console.warn('⚠️ [WARNING] API health check failed:', error.message || error)
     apiHealthy.value = false
     return false
   }
 }
 
-// 重新检查API健康状态（增强版）
+// 重新检查API健康状态（简化版）
 const recheckApiHealth = async () => {
   isRecheckingApi.value = true
-
-  // 先进行网络连通性测试
-  console.log('🔍 [DEBUG] Starting network connectivity test...')
-
-  try {
-    // 测试基本网络连接
-    const networkTest = await fetch('https://httpbin.org/get', {
-      method: 'GET',
-      mode: 'cors',
-      cache: 'no-cache'
-    })
-
-    if (networkTest.ok) {
-      console.log('✅ [DEBUG] Basic network connectivity: OK')
-    } else {
-      console.warn('⚠️ [WARNING] Basic network test failed with status:', networkTest.status)
-    }
-  } catch (networkError) {
-    console.error('❌ [ERROR] Basic network connectivity test failed:', networkError)
-  }
-
-  // 测试硅基流动服务器连通性
-  try {
-    const siliconFlowTest = await fetch('https://api.siliconflow.cn', {
-      method: 'GET',
-      mode: 'cors',
-      cache: 'no-cache'
-    })
-    console.log('🔍 [DEBUG] SiliconFlow server connectivity test:', siliconFlowTest.status)
-  } catch (siliconFlowError) {
-    console.error('❌ [ERROR] SiliconFlow server connectivity test failed:', siliconFlowError)
-  }
-
   const isHealthy = await checkApiHealth()
   isRecheckingApi.value = false
 
@@ -735,6 +851,41 @@ const recheckApiHealth = async () => {
     console.log('✅ [DEBUG] API recheck successful')
   } else {
     console.log('❌ [DEBUG] API recheck still failing')
+  }
+}
+
+// 手动测试流式API
+const testStreamAPI = async () => {
+  try {
+    console.log('🧪 [DEBUG] Testing stream API...')
+
+    const testMessages = [
+      { role: 'user', content: '请用一句话介绍一下太阳系' }
+    ]
+
+    const onChunk = (chunk: string) => {
+      console.log('📦 [DEBUG] Stream chunk received:', chunk)
+    }
+
+    const response = await callSiliconFlowAPIStream(testMessages, selectedModel.value, onChunk)
+    console.log('✅ [DEBUG] Stream API test successful:', response)
+
+    // 显示测试成功消息
+    messages.value.push({
+      role: 'assistant',
+      content: '✅ 流式API测试成功！您可以正常使用AI讲解员功能。',
+      timestamp: new Date()
+    })
+
+  } catch (error) {
+    console.error('❌ [ERROR] Stream API test failed:', error)
+
+    // 显示测试失败消息
+    messages.value.push({
+      role: 'assistant',
+      content: `❌ 流式API测试失败: ${error.message}`,
+      timestamp: new Date()
+    })
   }
 }
 

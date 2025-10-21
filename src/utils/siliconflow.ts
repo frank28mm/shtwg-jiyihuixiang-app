@@ -122,7 +122,164 @@ const getApiConfig = () => {
   return { apiKey, baseUrl, defaultModel };
 };
 
-// 调用硅基流动API
+// 调用硅基流动API（流式响应）
+export async function callSiliconFlowAPIStream(
+  messages: Array<{ role: string; content: string }>,
+  model: SiliconFlowModel = 'Pro/moonshotai/Kimi-K2-Instruct',
+  onChunk?: (chunk: string) => void
+): Promise<string> {
+  console.log('🔌 [DEBUG] callSiliconFlowAPIStream started:', {
+    model,
+    messagesCount: messages.length,
+    messages: messages.map(msg => ({ role: msg.role, contentLength: msg.content.length }))
+  });
+
+  const { apiKey, baseUrl } = getApiConfig();
+  const modelConfig = SILICONFLOW_MODELS[model];
+
+  console.log('⚙️ [DEBUG] API Config:', {
+    baseUrl,
+    model,
+    hasApiKey: !!apiKey,
+    apiKeyPrefix: apiKey ? apiKey.substring(0, 10) + '...' : 'none',
+    modelConfig
+  });
+
+  const requestBody = {
+    model,
+    messages,
+    max_tokens: modelConfig.maxTokens,
+    temperature: modelConfig.temperature,
+    stream: true // 启用流式响应
+  };
+
+  console.log('📤 [DEBUG] Stream request body:', {
+    model: requestBody.model,
+    messagesCount: requestBody.messages.length,
+    max_tokens: requestBody.max_tokens,
+    temperature: requestBody.temperature,
+    stream: requestBody.stream
+  });
+
+  try {
+    console.log('🌐 [DEBUG] Making stream fetch request to:', `${baseUrl}/chat/completions`);
+
+    const response = await fetch(`${baseUrl}/chat/completions`, {
+      method: 'POST',
+      mode: 'cors',
+      credentials: 'omit',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    console.log('📥 [DEBUG] Stream response received:', {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok,
+      headers: Object.fromEntries(response.headers.entries())
+    });
+
+    if (!response.ok) {
+      let errorData: any = {};
+      try {
+        errorData = await response.json();
+        console.error('❌ [ERROR] API Error Response:', errorData);
+      } catch (parseError) {
+        console.error('❌ [ERROR] Failed to parse error response:', parseError);
+      }
+
+      const errorMessage = `API调用失败: ${response.status} ${response.statusText} - ${errorData.error?.message || '未知错误'}`;
+      console.error('❌ [ERROR] Final error message:', errorMessage);
+      throw new Error(errorMessage);
+    }
+
+    const reader = response.body?.getReader();
+    const decoder = new TextDecoder();
+    let fullContent = '';
+
+    if (!reader) {
+      throw new Error('无法获取响应流');
+    }
+
+    console.log('🔄 [DEBUG] Starting to read stream chunks...');
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+
+        if (done) {
+          console.log('✅ [DEBUG] Stream reading completed');
+          break;
+        }
+
+        const chunk = decoder.decode(value, { stream: true });
+        console.log('📦 [DEBUG] Received chunk:', chunk.substring(0, 100));
+
+        // 处理SSE格式数据
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
+
+            if (data === '[DONE]') {
+              console.log('🏁 [DEBUG] Stream finished with [DONE]');
+              return fullContent;
+            }
+
+            try {
+              const parsed = JSON.parse(data);
+              const content = parsed.choices?.[0]?.delta?.content;
+
+              if (content) {
+                fullContent += content;
+                if (onChunk) {
+                  onChunk(content);
+                }
+              }
+            } catch (parseError) {
+              console.warn('⚠️ [WARNING] Failed to parse chunk:', data, parseError);
+            }
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
+
+    console.log('✅ [DEBUG] Stream API call successful:', {
+      contentLength: fullContent.length,
+      contentPreview: fullContent.substring(0, 100) + '...'
+    });
+
+    return fullContent;
+  } catch (error) {
+    console.error('❌ [ERROR] 硅基流动流式API调用错误:', error);
+
+    let enhancedError = error;
+
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      enhancedError = new Error('网络请求失败：可能是网络连接问题、CORS策略限制或防火墙阻止。请检查网络连接并稍后重试。');
+      enhancedError.name = 'NetworkError';
+      enhancedError.originalError = error;
+    } else if (error?.name === 'AbortError') {
+      enhancedError = new Error('请求被中止：可能是网络超时或用户取消了请求。');
+      enhancedError.name = 'AbortError';
+      enhancedError.originalError = error;
+    } else if (error?.message?.includes('ERR_NETWORK')) {
+      enhancedError = new Error('网络错误：无法连接到硅基流动服务器，请检查网络连接。');
+      enhancedError.name = 'NetworkError';
+      enhancedError.originalError = error;
+    }
+
+    throw enhancedError;
+  }
+}
+
+// 调用硅基流动API（非流式，保持向后兼容）
 export async function callSiliconFlowAPI(
   messages: Array<{ role: string; content: string }>,
   model: SiliconFlowModel = 'Pro/moonshotai/Kimi-K2-Instruct'
